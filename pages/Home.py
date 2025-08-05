@@ -5,32 +5,6 @@ import streamlit as st
 from streamlit_folium import st_folium
 
 st.html(
-    """
-    <style>
-    .content-box {
-        margin-bottom: 1rem;
-        padding: 1rem;
-        border-radius: 1rem;
-        color: white;
-        font-weight: bold;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    }
-    .metrics-box { background-color: #26324d; } 
-    .change-box { background-color: #394a70; } 
-    .regional-box { background-color: #5670a8; }
-    .expander-style { font-weight: bold; color: #9ebcf0; }
-    .map-box {
-        padding: 1rem;
-        border-radius: 1rem;
-        background-color: #3e5c72;
-        color: white;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    }
-    </style>
-    """,
-)
-
-st.html(
     '''
     <h1 style="
         font-family: 'Bungee Shade', 'Audiowide', sans-serif;
@@ -51,7 +25,6 @@ st.text(
 )
 
 # You can alter the map properties here:
-st.sidebar.title("Customize Map Appearance")
 map_style = st.sidebar.selectbox(
     "Select Map Style",
     options=["CartoDB positron", "CartoDB dark_matter"],
@@ -113,7 +86,7 @@ with st.expander("🗺️ Map of Greenland with selected study sites", expanded=
             st.error(f"The uploaded file must contain the following columns: {', '.join(required_columns)}")
         else:
             interactive_map = create_interactive_map(glacier_sites, map_style)
-            st_folium(interactive_map, width=800, height=600)
+            st_folium(interactive_map, use_container_width=True)
     except Exception as e:
         st.error(f"An error occurred while loading the CSV file: {e}")
 

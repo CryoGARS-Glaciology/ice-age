@@ -9,32 +9,19 @@ import io
 
 SHAPEFILE_CATALOG_DIR = "catalog-data/iceberg-shapefiles"
 
-#This will allow you to change the colors of the background, text color, and sitebar:
-st.markdown(
-    """
-    <style>
-    /* Title text color */
-    .stTitle {
-        color: #00695c;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# The two lines below will display the images in the sidebar:
-st.sidebar.image("catalog-data/images/Swirly-iceberg.png", caption="A sculpted Iceberg drifts off of Baffin Island, Nunavut. Icebergs form when chunks of ice calve, or break off, from glaciers, ice shelves, or a larger iceberg. The North Atlantic and the cold waters surrounding Antarctica are home to most of the icebergs on Earth. Credit: Shari Fox, NSIDC")
-st.sidebar.image("catalog-data/images/Beautiful-icebergs.png", caption="Credit: Twila Moon, NSIDC")
-
 # Title of the page with description:
 st.title("🔍👀 Iceberg Shapefile Viewer:")
-st.markdown('')
 st.markdown("❄️This page will allow you to explore iceberg varying iceberg shapes and sizes using shapefiles.")
 st.markdown("The plots will automatically adjust the axis boundaries based on the largest iceberg, which ensures proper scaling for comparative analysis. The icebergs are color-coded by date, with orange representing the earlier date and green representing the later date.")
 st.markdown("The shapefiles are then divided into four groups based on area, simplifying the identification of patterns in shape and size. Each group is displayed in its dedicated subplot, with overlapping shapes displayed in low opacity. This will hopefully expose the trends and variations across groups while preserving individual details.")
 
 #The spreadsheet in the link below will display the available data:
 st.info('Click here for the [Fjord Abbreviation List & Paired Dates](https://docs.google.com/spreadsheets/d/1kCcKqf717kK3_Xx-GDe0f61jhlUpZ5n6BN1qtiw7S4w/edit?gid=0#gid=0)')
+
+# User interactions
+with st.container():
+    st.header("Filter")
+    menu_col1, menu_col2, menu_col3 = st.columns(3)
 
 #This will load the shapefiles, they will plot whether they exist within the folders or not.
 if os.path.exists(SHAPEFILE_CATALOG_DIR):
@@ -45,12 +32,13 @@ if os.path.exists(SHAPEFILE_CATALOG_DIR):
 
     # The default option the first found
     default_site_name = site_names[0]
-    site_name = st.selectbox(
-        "Select Site Name",
-        site_names,
-        index=site_names.index(default_site_name) if default_site_name in site_names else 0,
-        key="site_name_selectbox"
-    )
+    with menu_col1:
+        site_name = st.selectbox(
+            "Select Site Name",
+            site_names,
+            index=site_names.index(default_site_name) if default_site_name in site_names else 0,
+            key="site_name_selectbox"
+        )
 
     #This will get all of the available data for the date folders for the selected site, then it will sort the dates.
     if site_name:
@@ -70,13 +58,14 @@ if os.path.exists(SHAPEFILE_CATALOG_DIR):
         default_date_range = date_folders[0]
         default_dates = (default_date_range.split('-')[0], default_date_range.split('-')[1])
 
-       #Dropdown menu customization:
-        selected_dates = st.selectbox(
-            "Select Date Range",
-            date_options,
-            index=date_options.index(default_dates) if default_dates in date_options else 0,
-            key="date_range_selectbox"
-        )
+        with menu_col2:
+           #Dropdown menu customization:
+            selected_dates = st.selectbox(
+                "Select Date Range",
+                date_options,
+                index=date_options.index(default_dates) if default_dates in date_options else 0,
+                key="date_range_selectbox"
+            )
         
         if selected_dates:
             early_date, late_date = selected_dates

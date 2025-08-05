@@ -24,6 +24,7 @@ pg = st.navigation(
         "About" : [
             st.Page("pages/Research-methods.py"),
             st.Page("pages/Field-Work-images.py"),
+            st.Page("pages/Image-Gallery.py"),
             st.Page("pages/Acknowledgements.py"),
         ]
     }

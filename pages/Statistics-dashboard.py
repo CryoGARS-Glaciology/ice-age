@@ -4,58 +4,24 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import os
 
-st.markdown(
-    """
-    <style>
-    /* Title text color */
-    .stTitle {
-        color: #000000;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 # Title and introductory information
 st.title('📊 Iceberg Statistics Dashboard')
-st.markdown('This page will allow you to......')
 st.info('Click here for the [Fjord Abbreviation List & Paired Dates](https://docs.google.com/spreadsheets/d/1kCcKqf717kK3_Xx-GDe0f61jhlUpZ5n6BN1qtiw7S4w/edit?gid=0#gid=0)')
 
 # Base directory where data is stored
 base_path = "catalog-data/Melt-rates"
 
-# Sidebar inputs with default values
-st.sidebar.header("Inputs")
-site_name = st.sidebar.selectbox("Select Site Name:", ["KOG", "SEK", "ASG"], index=0)  # Default is "KOG"
-early_date = st.sidebar.text_input("Enter Early Date (YYYYMMDD):", "20170515")  #Default date
-later_date = st.sidebar.text_input("Enter Later Date (YYYYMMDD):", "20170611")
+# User interactions
+with st.container():
+    st.header("Filter")
+    menu_col1, menu_col2, menu_col3 = st.columns(3)
 
-# Sidebar images
-st.sidebar.image(
-    "catalog-data/images/Ice-bridge.png",
-    caption="Surprising iceberg shapes drift in the coastal waters near Ilulissat, Greenland. Credit: Twila Moon, NSIDC"
-)
-st.sidebar.image(
-    "catalog-data/images/Icebergs.png",
-    caption="An iceberg drifts in the sea off the coast of Ilulissat, Greenland. Credit: Twila Moon, NSIDC"
-)
-st.sidebar.image(
-    "catalog-data/images/Sunset-icebergs.png",
-    caption="Icebergs crowd the waters along the northwestern Greenland coast. Credit: Twila Moon, NSIDC"
-)
-
-# Add placeholder for the GIF or animation
-gif_placeholder = st.empty()
-
-# Display the penguin smack GIF
-gif_placeholder.markdown(
-    """
-    <div style="display: flex; justify-content: center;">
-        <img src="https://media.giphy.com/media/jxETRYAi2KReel7pqy/giphy.gif" alt="penguin smack gif" width="500">
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+with menu_col1:
+    site_name = st.selectbox("Select Site Name:", ["KOG", "SEK", "ASG"], index=0)  # Default is "KOG"
+with menu_col2:
+    early_date = st.text_input("Enter Early Date (YYYYMMDD):", "20170515")  #Default date
+with menu_col3:
+    later_date = st.text_input("Enter Later Date (YYYYMMDD):", "20170611")
 
 # Construct folder and file paths
 if site_name and early_date and later_date:

@@ -5,33 +5,9 @@ import folium
 from streamlit_folium import st_folium
 import os
 
-st.markdown(
-    """
-    <style>
-    /* Title text color */
-    .stTitle {
-        color: #000000;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 # Title and description
 st.title("🗺️ Visualize iceberg spatial distributions")
 st.markdown("This interactive map allows you to zoom into specific sites and visualize iceberg distributions in Greenland.")
-
-# Sidebar image and informational links
-st.sidebar.image(
-    "catalog-data/images/Glacier-iceberg.png",
-    caption="Iceberg in Kongsfjord, Svalbard. Credit: Allen Pope, NSIDC"
-)
-st.sidebar.markdown('Fill out the prompts below to display the interactive map!')
-st.markdown('👆Click the icebergs to view their width, height, and more details!')
-st.markdown('✋ Pan around the map to see how icebergs drift!')
-st.markdown('🔎 Zoom out to see the full extent!')
-
-# Sidebar for Fjord Abbreviation List & Paired Dates
 st.info('Click here for the [Fjord Abbreviation List & Paired Dates](https://docs.google.com/spreadsheets/d/1kCcKqf717kK3_Xx-GDe0f61jhlUpZ5n6BN1qtiw7S4w/edit?gid=0#gid=0)')
 
 # File paths
@@ -71,13 +47,11 @@ def create_interactive_map(glacier_sites, site_id, early_date, later_date, selec
     site_lat, site_lon = site.iloc[0]['LAT'], site.iloc[0]['LON']
 
     # Initialize map
-    m = folium.Map(location=[site_lat, site_lon], zoom_start=12.3, tiles="CartoDB positron")
-
-    # Define color mapping for dates
-    date_colors = {
-        early_date: "blue",
-        later_date: "green"
-    }
+    m = folium.Map(
+        location=[site_lat, site_lon],
+        zoom_start=12.3,
+        tiles="CartoDB positron"
+    )
 
     # Add iceberg shapefiles to the map
     site_path = os.path.join(shapefile_base_path, site_id, f"{early_date}-{later_date}")
@@ -108,41 +82,66 @@ def create_interactive_map(glacier_sites, site_id, early_date, later_date, selec
 
     return m
 
-# Read glacier sites and process user input
-try:
-    glacier_sites = pd.read_csv(csv_file_path)
+glacier_sites = pd.read_csv(csv_file_path)
 
+# User filter top row
+with st.container():
+    st.header("Filter")
+    menu_col_1_1, menu_col_1_2, menu_col_1_3 = st.columns(3)
+
+with menu_col_1_1:
     # Sidebar: Select site ID
-    #site_id = st.sidebar.selectbox("Select Glacier Site", sorted(glacier_sites['Glacier_ID'].unique()))
-    site_id = st.sidebar.selectbox("Select a Glacier site: ", sorted(glacier_sites['Glacier_ID'].unique()), index = sorted(glacier_sites['Glacier_ID'].unique()).index("NOG"))
-    # Sidebar: Get available date ranges for the selected site
-    available_dates = get_available_dates(site_id)
+    site_id = st.selectbox(
+        "Select a Glacier site: ",
+        sorted(glacier_sites["Glacier_ID"].unique()),
+        index=sorted(glacier_sites["Glacier_ID"].unique()).index("NOG"),
+    )
+with menu_col_1_2:
+    early_date = st.text_input("Enter Early Date (YYYYMMDD):", "20170515")  #Default date
+with menu_col_1_3:
+    later_date = st.text_input("Enter Later Date (YYYYMMDD):", "20170611")
 
-    if available_dates:
-        selected_date_range = st.sidebar.selectbox("Select Date Range", available_dates)
-        early_date, later_date = selected_date_range.split('-')
-    else:
-        st.error(f"No available date ranges found for site: {site_id}")
-        early_date, later_date = "", ""
+# User filter second row
+with st.container():
+    st.header("Visualize")
+    menu_col_2_1, menu_col_2_2, menu_col_2_3 = st.columns(3)
 
-    # Sidebar: Select icebergs for map
-    shapefile_dir = os.path.join(shapefile_base_path, site_id, f"{early_date}-{later_date}")
-    shapefiles = [f for f in os.listdir(shapefile_dir) if f.endswith(".shp")] if os.path.exists(shapefile_dir) else []
+# Sidebar: Get available date ranges for the selected site
+available_dates = get_available_dates(site_id)
 
-    plot_option = st.sidebar.radio("Plot icebergs:", ("Plot selected date range", "Select specific icebergs"))
+if available_dates:
+    with menu_col_2_1:
+        selected_date_range = st.selectbox("Select Date Range", available_dates)
+    early_date, later_date = selected_date_range.split('-')
+else:
+    st.error(f"No available date ranges found for site: {site_id}")
+    early_date, later_date = "", ""
 
-    # Select specific icebergs
+# Sidebar: Select icebergs for map
+shapefile_dir = os.path.join(shapefile_base_path, site_id, f"{early_date}-{later_date}")
+shapefiles = [
+    f for f in os.listdir(shapefile_dir) if f.endswith(".shp")
+] if os.path.exists(shapefile_dir) else []
+
+# Select specific icebergs
+with menu_col_2_2:
+    plot_option = st.radio("Plot icebergs:", ("Plot selected date range", "Select specific icebergs"))
     selected_icebergs = st.multiselect("Select Icebergs to View", shapefiles, default=shapefiles[:1]) if plot_option == "Select specific icebergs" else shapefiles
+with menu_col_2_3:
+    st.markdown("👆Click the icebergs to view their width, height, and more details!")
+    st.markdown("✋ Pan around the map to see how icebergs drift!")
+    st.markdown("🔎 Zoom out to see the full extent!")
 
-    # Generate and display map
-    if selected_icebergs:
-        map_object = create_interactive_map(glacier_sites, site_id, early_date, later_date, selected_icebergs)
-        st_folium(map_object, width=800, height=600)
-    else:
-        st.write("")
-
-except Exception as e:
-    st.error(f"An error occurred: {e}")
-
-
-
+# Generate and display map
+if selected_icebergs:
+    map_object = create_interactive_map(
+        glacier_sites,
+        site_id,
+        early_date,
+        later_date,
+        selected_icebergs
+    )
+    st_folium(map_object, width=800, height=600)
+    
+else:
+    st.write("")

@@ -8,4 +8,3 @@ dependencies:
   - streamlit=1.47
   - streamlit-folium
 
-prefix: "/data/micromamba/envs/ice_age"

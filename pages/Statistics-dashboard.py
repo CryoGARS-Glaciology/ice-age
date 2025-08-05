@@ -31,10 +31,6 @@ if site_name and early_date and later_date:
 
     # Check if file exists
     if os.path.exists(csv_file_path):
-        # Clear the GIF once the data loads
-        gif_placeholder.empty()
-
-        st.success("🎉 CSV file found! 🎉")
         # Load the CSV file
         df = pd.read_csv(csv_file_path)
         st.write("### Iceberg Meltrate Information:")
@@ -43,7 +39,7 @@ if site_name and early_date and later_date:
         # Add a save button for the melt rate table
         csv_data = df.to_csv(index=False)
         st.download_button(
-            label="Press here to download .csv file",
+            label="Download .csv file",
             data=csv_data,
             file_name="iceberg_melt_rates.csv",
             mime="text/csv",
@@ -66,14 +62,13 @@ if site_name and early_date and later_date:
         # Add a save button for the correlogram
         with open(correlogram_path, "rb") as img_file:
             st.download_button(
-                label="Press here to download as a .png image",
+                label="Download as a .png image",
                 data=img_file,
                 file_name="correlogram.png",
                 mime="image/png",
             )
     else:
         # Clear the GIF if file not found, but show error
-        gif_placeholder.empty()
         st.error("🚫 CSV file not found. Please check your inputs! 🚫")
 else:
     st.warning("⚠️ Please provide all inputs: Site Name, Early Date, and Later Date.")

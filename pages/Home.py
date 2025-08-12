@@ -1,7 +1,6 @@
 import streamlit as st
 
-from modules.data_path import HISTO_CSV_FILE_PATH
-from modules.plotting import distribution, interactive_map
+from modules.plotting import distribution_plot, overview_map
 
 st.html(
     '''
@@ -33,7 +32,7 @@ map_style = st.sidebar.selectbox(
 
 # Create the map with interactive controls in an expandable section
 with st.expander("🗺️ Map of Greenland with selected study sites", expanded=True):
-    interactive_map(map_style)
+    overview_map(map_style)
 
 st.markdown("Years represented in study: 2011 - 2023")
 
@@ -89,4 +88,4 @@ st.info(
 )
 
 # Distribution plot
-st.pyplot(distribution(HISTO_CSV_FILE_PATH))
+st.pyplot(distribution_plot())

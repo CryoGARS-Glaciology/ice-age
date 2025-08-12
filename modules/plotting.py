@@ -9,11 +9,11 @@ import pandas as pd
 from shapely.affinity import translate
 from streamlit_folium import st_folium
 
-from .data_path import GLACIER_LOCATIONS_CSV, NATURAL_EARTH_PATH
+from .data_path import GLACIER_LOCATIONS_CSV, NATURAL_EARTH_PATH, HISTO_CSV_FILE_PATH
 
 
-def distribution(csv_file):
-    df = pd.read_csv(csv_file)
+def distribution_plot():
+    df = pd.read_csv(HISTO_CSV_FILE_PATH)
 
     df_sorted = df.sort_values(by='Corresponding icebergs', ascending=True)
     names = df_sorted['Official_n'].astype(str)
@@ -34,7 +34,7 @@ def distribution(csv_file):
 
     return plt
 
-def interactive_map(map_style):
+def overview_map(map_style):
     glacier_sites = pd.read_csv(GLACIER_LOCATIONS_CSV)
     world = gpd.read_file(NATURAL_EARTH_PATH)
     greenland = world[world['NAME'] == 'Greenland']
@@ -148,3 +148,5 @@ def iceberg_quartiles(area_df, target_folder):
         ax.set_ylabel("Height (m)")
 
     return fig
+
+#def distributions_map()

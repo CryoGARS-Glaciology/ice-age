@@ -1,10 +1,16 @@
+import os
+
 import folium
 import geopandas as gpd
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+
+from shapely.affinity import translate
 from streamlit_folium import st_folium
 
-from .data_path import NATURAL_EARTH_PATH, GLACIER_LOCATIONS_CSV
+from .data_path import GLACIER_LOCATIONS_CSV, NATURAL_EARTH_PATH
+
 
 def distribution(csv_file):
     df = pd.read_csv(csv_file)
@@ -67,3 +73,78 @@ def interactive_map(map_style):
         ).add_to(map)
 
     return st_folium(map, use_container_width=True)
+
+def calculate_dominant_angle(gdf):
+    """
+    This function will calculate the dominant angle of the iceberg shapes, so that they
+    plot a little nicer and more uniform. It will use the average dominant angle.
+    """
+    gdf = gdf[gdf['geometry'].is_valid]  # Ensure geometry is valid
+    bounds = gdf['geometry'].apply(lambda geom: geom.minimum_rotated_rectangle)
+
+    def longest_edge_angle(box):
+        coords = np.array(box.exterior.coords)
+        edges = np.diff(coords, axis=0)[:-1]
+        lengths = np.linalg.norm(edges, axis=1)
+        longest_idx = np.argmax(lengths)
+        longest_edge = edges[longest_idx]
+        angle = np.arctan2(longest_edge[1], longest_edge[0])
+        return np.degrees(angle)
+
+    angles = bounds.apply(longest_edge_angle)
+    return angles.mean()
+
+quartile_colors = {"Q1": "#8bd67a", "Q2": "#e080d7", "Q3": "#f7bf07", "Q4": "#f78307"}
+quartile_opacity = {"Q1": 0.4, "Q2": 0.4, "Q3": 0.4, "Q4": 0.4}
+
+def iceberg_quartiles(area_df, target_folder):
+    # This will help with consistent scaling:
+    max_width, max_height = 0, 0
+    for shapefile in area_df["Shapefile"]:
+        shapefile_path = os.path.join(target_folder, shapefile)
+        gdf = gpd.read_file(shapefile_path)
+
+        if gdf.crs is None:
+            gdf = gdf.set_crs("EPSG:3413")
+        gdf = gdf.to_crs("EPSG:3413")
+
+        if not gdf.empty:
+            bounds = gdf.total_bounds
+            max_width = max(max_width, bounds[2] - bounds[0])
+            max_height = max(max_height, bounds[3] - bounds[1])
+    
+    fig, axes = plt.subplots(2, 2, figsize=(12, 12), sharex=True, sharey=True)
+    axes = axes.flatten()
+
+    for i, quartile in enumerate(["Q1", "Q2", "Q3", "Q4"]):
+        ax = axes[i]
+        ax.set_title(f"Quartile {quartile}", fontsize=10)
+
+        quartile_files = area_df[area_df["Quartile"] == quartile]["Shapefile"]
+
+        for shapefile in quartile_files:
+            shapefile_path = os.path.join(target_folder, shapefile)
+            gdf = gpd.read_file(shapefile_path)
+
+            if gdf.crs is None:
+                gdf = gdf.set_crs(
+                    "EPSG:3413"
+                )  # Proper projection for Greenland; this value will change depending on where your data is!
+            gdf = gdf.to_crs("EPSG:3413")
+
+            color = quartile_colors[quartile]
+            opacity = quartile_opacity[quartile]
+
+            overall_bounds = gdf.total_bounds
+            gdf["geometry"] = gdf["geometry"].apply(
+                lambda geom: translate(geom, -overall_bounds[0], -overall_bounds[1])
+            )
+
+            gdf.plot(ax=ax, color=color, edgecolor="black", alpha=opacity, linewidth=2)
+
+        ax.set_xlim(0, max_width)
+        ax.set_ylim(0, max_height)
+        ax.set_xlabel("Width (m)")
+        ax.set_ylabel("Height (m)")
+
+    return fig

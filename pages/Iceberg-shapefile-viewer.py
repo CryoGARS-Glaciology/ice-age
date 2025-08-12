@@ -2,12 +2,12 @@ import streamlit as st
 import os
 import geopandas as gpd
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from shapely.affinity import translate
 import io
 
-SHAPEFILE_CATALOG_DIR = "catalog-data/iceberg-shapefiles"
+from modules.data_path import SHAPEFILE_CATALOG_DIR
+from modules.plotting import iceberg_quartiles
 
 # Title of the page with description:
 st.title("🔍👀 Iceberg Shapefile Viewer:")
@@ -140,82 +140,12 @@ if os.path.exists(SHAPEFILE_CATALOG_DIR):
                 st.error(f"Target folder '{target_folder}' does not exist. Please check the dates and site name.")
         else:
             st.info("Please select a date range to proceed!")
-else:
-    st.error(f"Base path '{SHAPEFILE_CATALOG_DIR}' does not exist. Please check your folder structure.")
-
-# This function will calculate the dominant angle of the iceberg shapes, so that they plot a little nicer and more uniform. It will use the average dominant angle.
-def calculate_dominant_angle(gdf):
-    """Calculate the dominant angle for the geometry in the shapefile."""
-    gdf = gdf[gdf['geometry'].is_valid]  # Ensure geometry is valid
-    bounds = gdf['geometry'].apply(lambda geom: geom.minimum_rotated_rectangle)
-    
-    def longest_edge_angle(box):
-        coords = np.array(box.exterior.coords)
-        edges = np.diff(coords, axis=0)[:-1]  
-        lengths = np.linalg.norm(edges, axis=1)
-        longest_idx = np.argmax(lengths)
-        longest_edge = edges[longest_idx]
-        angle = np.arctan2(longest_edge[1], longest_edge[0])
-        return np.degrees(angle)
-    
-    angles = bounds.apply(longest_edge_angle)
-    return angles.mean()  
 
 st.title("📊 Quartile-Based Iceberg Shape Comparison")
 area_df["Quartile"] = pd.qcut(area_df["Area (m²)"], 4, labels=["Q1", "Q2", "Q3", "Q4"])
 
-#Change the colors of the quartiles using the Hex Color picker:
-quartile_colors = {"Q1": "#8bd67a", "Q2": "#e080d7", "Q3": "#f7bf07", "Q4": "#f78307"}
-quartile_opacity = {"Q1": 0.4, "Q2": 0.4, "Q3": 0.4, "Q4": 0.4}
-
-# This will help with consistent scaling:
-max_width, max_height = 0, 0
-for shapefile in area_df["Shapefile"]:
-    shapefile_path = os.path.join(target_folder, shapefile)
-    gdf = gpd.read_file(shapefile_path)
-    
-    if gdf.crs is None:
-        gdf = gdf.set_crs('EPSG:3413')
-    gdf = gdf.to_crs('EPSG:3413')
-    
-    if not gdf.empty:
-        bounds = gdf.total_bounds
-        max_width = max(max_width, bounds[2] - bounds[0])
-        max_height = max(max_height, bounds[3] - bounds[1])
-
-# Subplot customization:
-fig, axes = plt.subplots(2, 2, figsize=(12, 12), sharex=True, sharey=True)
-axes = axes.flatten()
-
-for i, quartile in enumerate(["Q1", "Q2", "Q3", "Q4"]):
-    ax = axes[i]
-    ax.set_title(f"Quartile {quartile}", fontsize=10)
-    
-    quartile_files = area_df[area_df["Quartile"] == quartile]["Shapefile"]
-    
-    for shapefile in quartile_files:
-        shapefile_path = os.path.join(target_folder, shapefile)
-        gdf = gpd.read_file(shapefile_path)
-
-        if gdf.crs is None:
-            gdf = gdf.set_crs('EPSG:3413') #Proper projection for Greenland; this value will change depending on where your data is!
-        gdf = gdf.to_crs('EPSG:3413')
-        
-        color = quartile_colors[quartile]
-        opacity = quartile_opacity[quartile]
-
-        overall_bounds = gdf.total_bounds
-        gdf['geometry'] = gdf['geometry'].apply(lambda geom: translate(geom, -overall_bounds[0], -overall_bounds[1]))
-
-        gdf.plot(ax=ax, color=color, edgecolor='black', alpha=opacity, linewidth=2)
-    
-    ax.set_xlim(0, max_width)
-    ax.set_ylim(0, max_height)
-    ax.set_xlabel("Width (m)")
-    ax.set_ylabel("Height (m)")
-
-#Plot the figure!
-st.pyplot(fig)
+# Plot figure with all shapes
+st.pyplot(iceberg_quartiles(area_df, target_folder))
 
 # This will allow you to save the image as a .png file. 
 image_stream = io.BytesIO()

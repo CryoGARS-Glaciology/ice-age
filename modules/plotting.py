@@ -5,11 +5,15 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 from shapely.affinity import translate
 from streamlit_folium import st_folium
 
-from .data_path import GLACIER_LOCATIONS_CSV, NATURAL_EARTH_PATH, HISTO_CSV_FILE_PATH
+from .data_path import (
+    GLACIER_LOCATIONS_CSV,
+    HISTO_CSV_FILE_PATH,
+    NATURAL_EARTH_PATH,
+    SHAPEFILE_CATALOG_DIR,
+)
 
 
 def distribution_plot():
@@ -149,4 +153,71 @@ def iceberg_quartiles(area_df, target_folder):
 
     return fig
 
-#def distributions_map()
+def load_and_reproject_shapefile(filepath):
+    gdf = gpd.read_file(filepath)
+    if gdf.crs is None:
+        gdf.set_crs("EPSG:3413", inplace=True)
+    return gdf.to_crs("EPSG:4326")
+
+def calculate_width_height(gdf):
+    # Reproject to EPSG:3413 (meters)
+    gdf = gdf.to_crs("EPSG:3413")
+
+    # Get the bounding box of the iceberg shape in meters
+    bounds = gdf.total_bounds
+    width = bounds[2] - bounds[0]  # x_max - x_min (in meters)
+    height = bounds[3] - bounds[1]  # y_max - y_min (in meters)
+
+    # Return width and height rounded to 2 decimal places
+    return round(width, 2), round(height, 2)
+
+def get_available_dates(site_id):
+    """
+    Get available date ranges based on site ID
+    """
+    site_path = os.path.join(SHAPEFILE_CATALOG_DIR, site_id)
+    if os.path.exists(site_path):
+        return [f for f in os.listdir(site_path) if os.path.isdir(os.path.join(site_path, f))]
+    return []
+
+def iceberg_map(glacier_sites, site_id, early_date, later_date):
+    """
+    Interactive map with icebergs
+    """
+    site = glacier_sites[glacier_sites['Glacier_ID'] == site_id]
+    site_lat, site_lon = site.iloc[0]['LAT'], site.iloc[0]['LON']
+
+    m = folium.Map(
+        location=[site_lat, site_lon],
+        zoom_start=12.3,
+        tiles="CartoDB positron"
+    )
+
+    # Add iceberg shapefiles to the map
+    site_path = os.path.join(SHAPEFILE_CATALOG_DIR, site_id, f"{early_date}-{later_date}")
+    if os.path.exists(site_path):
+        shapefiles = [f for f in os.listdir(site_path) if f.endswith(".shp")]
+        for iceberg in shapefiles:
+            shp_path = os.path.join(site_path, iceberg)
+            gdf = load_and_reproject_shapefile(shp_path)
+
+            # Calculate width and height
+            width, height = calculate_width_height(gdf)
+
+            color = "#7a1037" if early_date in iceberg else "#033b59" if later_date in iceberg else "gray"
+            popup_content = f"<strong>Iceberg ID:</strong> {iceberg}<br><strong>Width:</strong> {width} meters<br><strong>Height:</strong> {height} meters"
+
+            # Add GeoJson to map with popups
+            folium.GeoJson(
+                gdf.__geo_interface__,
+                name=iceberg,
+                style_function=lambda x, color=color: {"color": color, "weight": 1},
+                popup=folium.Popup(popup_content, max_width=300)
+            ).add_to(m)
+
+            # Zoom into iceberg centroid
+            centroid = gdf.geometry.centroid.iloc[0]
+            m.location = [centroid.y, centroid.x]
+            m.zoom_start = 12
+
+    return m

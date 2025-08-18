@@ -10,14 +10,14 @@ from streamlit_folium import st_folium
 
 from .data_path import (
     GLACIER_LOCATIONS_CSV,
-    HISTO_CSV_FILE_PATH,
-    NATURAL_EARTH_PATH,
+    HISTO_CSV_FILE_CSV,
+    NATURAL_EARTH_ZIP,
     SHAPEFILE_CATALOG_DIR,
 )
 
 
 def distribution_plot():
-    df = pd.read_csv(HISTO_CSV_FILE_PATH)
+    df = pd.read_csv(HISTO_CSV_FILE_CSV)
 
     df_sorted = df.sort_values(by='Corresponding icebergs', ascending=True)
     names = df_sorted['Official_n'].astype(str)
@@ -40,7 +40,7 @@ def distribution_plot():
 
 def overview_map(map_style):
     glacier_sites = pd.read_csv(GLACIER_LOCATIONS_CSV)
-    world = gpd.read_file(NATURAL_EARTH_PATH)
+    world = gpd.read_file(NATURAL_EARTH_ZIP)
     greenland = world[world['NAME'] == 'Greenland']
 
     # This will convert Greenland to GeoJSON for Folium package:

@@ -5,38 +5,31 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
 from shapely.affinity import translate
 from streamlit_folium import st_folium
+from matplotlib.figure import Figure
 
 from .data_path import (
-    GLACIER_LOCATIONS_CSV,
-    HISTO_CSV_FILE_CSV,
-    NATURAL_EARTH_ZIP,
-    SHAPEFILE_CATALOG_DIR,
+    GLACIER_LOCATIONS_CSV, NATURAL_EARTH_ZIP, SHAPEFILE_CATALOG_DIR
 )
 
 
-def distribution_plot():
-    df = pd.read_csv(HISTO_CSV_FILE_CSV)
+# TODO: Make this plot based on the number of shapefiles in the database
+def distribution_plot() -> Figure:
+    """
+    Size distribution for number of icebergs per glacier ID.
+    Queries the database to retrieve information based on current data set.
+    """
+    plt.figure(dpi=200)
+    figure, axes = plt.subplots()
+    # plt.bar(names, values, color=cmap(norm(values)), edgecolor='black')
 
-    df_sorted = df.sort_values(by='Corresponding icebergs', ascending=True)
-    names = df_sorted['Official_n'].astype(str)
-    # Convert iceberg values to floats for proper color scaling
-    values = df_sorted['Corresponding icebergs'].astype(float)
+    axes.set_xlabel('Study site', fontsize=12)
+    axes.set_ylabel('Corresponding Icebergs', fontsize=12)
+    # axes.set_xticks(rotation=45, ha='right')
 
-    # Normalize the values to adjust the color intensity
-    norm = plt.Normalize(values.min(), values.max())
-    cmap = plt.cm.Blues  # Color map for blue shades
-
-    plt.figure(figsize=(10, 6))
-    plt.bar(names, values, color=cmap(norm(values)), edgecolor='black')
-
-    plt.title('Data distribution for Greenland Glacier study sites', fontsize=14)
-    plt.xlabel('Study site', fontsize=12)
-    plt.ylabel('Corresponding Icebergs', fontsize=12)
-    plt.xticks(rotation=45, ha='right')
-
-    return plt
+    return figure
 
 def overview_map(map_style):
     glacier_sites = pd.read_csv(GLACIER_LOCATIONS_CSV)
@@ -54,26 +47,12 @@ def overview_map(map_style):
         style_function=lambda x: {"fillColor": "#3156de", "color": "black", "weight": 1.0},
     ).add_to(map)
 
-    # Sorts sites into regional categories:
-    region_colors = {
-        'SE': 'red',
-        'CE': 'orange',
-        'CW': 'yellow',
-        'NW': 'green',
-        'NE': 'lime',
-        'NO': 'blue',
-        'SW': 'purple'
-    }
-
     # Add markers to signify study sites:
     for _, site in glacier_sites.iterrows():
-        region = site['Region']
-        color = region_colors.get(region, 'red')
-
         folium.Marker(
             location=[site['LAT'], site['LON']],
             popup=f"Official Name: {site['Official_n']}",
-            icon=folium.Icon(color=color, icon="info-sign"),
+            icon=folium.Icon(color='blue', icon="info-sign"),
         ).add_to(map)
 
     return st_folium(map, use_container_width=True)

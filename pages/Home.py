@@ -1,6 +1,6 @@
 import streamlit as st
 
-from modules.plotting import distribution_plot, overview_map
+from modules.plotting import overview_map, distribution_plot
 
 st.html(
     '''
@@ -55,10 +55,10 @@ st.html(
 )
 
 with st.expander("Change Over Time", expanded=True):
-    st.text("Volume change rate and elevation change rate over time")
+    st.subheader("Volume change rate and elevation change rate over time")
 
 with st.expander("Regional", expanded=True):
-    st.text("Iceberg size distributions across time and location")
+    st.subheader("Iceberg size distributions across time and location")
     # Distribution plot
     st.pyplot(distribution_plot())
 

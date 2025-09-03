@@ -28,6 +28,11 @@ map_style = st.sidebar.selectbox(
     options=["CartoDB positron", "CartoDB dark_matter"],
     index=0  #This line sets the default, change to 1 for dark_matter default.
 )
+st.sidebar.info(
+    "ICE-AGE will be under steady development and the data updated continuously! "
+    "The Data will be archived at the Arctic Data Center and web app source dode is "
+    "available via GitHub. "
+)
 
 
 # Create the map with interactive controls in an expandable section
@@ -58,8 +63,3 @@ with st.expander("Regional", expanded=True):
     st.pyplot(distribution_plot())
 
 
-st.info(
-    "ICE-AGE will be under steady development and the data updated continuously! "
-    "The Data will be archived at the Arctic Data Center and web app source dode is "
-    "available via GitHub. "
-)

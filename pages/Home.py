@@ -31,61 +31,35 @@ map_style = st.sidebar.selectbox(
 
 
 # Create the map with interactive controls in an expandable section
-with st.expander("🗺️ Map of Greenland with selected study sites", expanded=True):
+st.header("Study Sites in Greenland", divider=True)
+with st.expander("Map", expanded=True):
     overview_map(map_style)
+    st.markdown("Years represented in study: 2011 - 2023")
 
-st.markdown("Years represented in study: 2011 - 2023")
-
-with st.expander("How to access ICE-AGE:", expanded=True):
-    st.text(
-        "ICE-AGE data will be archived at the Arctic Data Center. "
-        "Code is available via GitHub, and Zenodo for future growth "
-        "and automated figure generation."
-    )
-
-st.title("Contents of ICE-AGE application:")
-
-with st.expander("📈 Individual Iceberg Metrics", expanded=True):
-    st.html(
-        """
-        <div class="content-box metrics-box">
-            <ul>
-                <li>Location, repeat imagery metadata, and identification for iceberg studies.</li>
-                <li>Access code for shapefiles to connect to ICE-AGE metrics.</li>
-                <li>Iceberg size, volume, draft, and submerged area data.</li>
-            </ul>
-        </div>
-        """,
-    )
-
-with st.expander("⏱️ Change Over Time Metrics", expanded=True):
-    st.html(
-        """
-        <div class="content-box change-box">
-            <ul>
-                <li>Volume change rate and elevation change rate over time.</li>
-            </ul>
-        </div>
-        """,
-    )
-
-with st.expander("🏞️ Regional Iceberg Metrics", expanded=True):
-    st.html(
-        """
-        <div class="content-box regional-box">
-            <ul>
-                <li>Iceberg size distributions across time and location.</li>
-            </ul>
-        </div>
-        """,
-    )
-
-st.info(
-    "ICE-AGE will be under continuous development and growth! "
-    "Some sites do not have data quite yet, so we appreciate your patience "
-    "while we work on updating our datasets. The following histogram shows "
-    "how much data each study site has."
+st.header("Available Iceberg Metrics", divider=True)
+st.html(
+    """
+    <div class="content-box metrics-box">
+        <ul>
+            <li>Location, repeat imagery metadata, and identification for iceberg studies.</li>
+            <li>Access code for shapefiles to connect to ICE-AGE metrics.</li>
+            <li>Iceberg size, volume, draft, and submerged area data.</li>
+        </ul>
+    </div>
+    """,
 )
 
-# Distribution plot
-st.pyplot(distribution_plot())
+with st.expander("Change Over Time", expanded=True):
+    st.text("Volume change rate and elevation change rate over time")
+
+with st.expander("Regional", expanded=True):
+    st.text("Iceberg size distributions across time and location")
+    # Distribution plot
+    st.pyplot(distribution_plot())
+
+
+st.info(
+    "ICE-AGE will be under steady development and the data updated continuously! "
+    "The Data will be archived at the Arctic Data Center and web app source dode is "
+    "available via GitHub. "
+)

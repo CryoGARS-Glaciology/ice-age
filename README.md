@@ -57,3 +57,17 @@ In a terminal
 ## History Credits
 This app was first prototyped by [Alexandra Friel](https://github.com/alexandra-friel/Greenland-icebergmeltrate-interactive)
 and development continued in this repository.
+
+## Development Team
+* Twila A. Moon[^1] (Project PI)
+* Dustin Carroll[^2]
+* Ellyn Enderlin[^3]
+* Aman KC[^3]
+* Alexandra Friel[^3]
+* Joachim Meyer[^4]
+
+Affiliations:
+[^1]: University of Colorado Boulder
+[^2]: San Jose State University
+[^3]: Boise State University
+[^4]: SciTenia LLC

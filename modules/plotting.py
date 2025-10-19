@@ -4,15 +4,13 @@ import folium
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
 from shapely.affinity import translate
 from streamlit_folium import st_folium
 from matplotlib.figure import Figure
 
-from .data_path import (
-    GLACIER_LOCATIONS_CSV, NATURAL_EARTH_ZIP, SHAPEFILE_CATALOG_DIR
-)
+from .data_path import NATURAL_EARTH_ZIP, SHAPEFILE_CATALOG_DIR
+from modules.database import LOCATIONS
 
 
 # TODO: Make this plot based on the number of shapefiles in the database
@@ -31,10 +29,14 @@ def distribution_plot() -> Figure:
 
     return figure
 
+
 def overview_map(map_style):
-    glacier_sites = pd.read_csv(GLACIER_LOCATIONS_CSV)
+    glacier_sites = gpd.GeoDataFrame(
+        LOCATIONS.execute(), geometry="geometry", crs="EPSG:4326"
+    )
+
     world = gpd.read_file(NATURAL_EARTH_ZIP)
-    greenland = world[world['NAME'] == 'Greenland']
+    greenland = world[world["NAME"] == "Greenland"]
 
     # This will convert Greenland to GeoJSON for Folium package:
     greenland_geojson = greenland.to_crs("EPSG:4326").__geo_interface__
@@ -44,18 +46,38 @@ def overview_map(map_style):
     folium.GeoJson(
         greenland_geojson,
         name="Greenland",
-        style_function=lambda x: {"fillColor": "#3156de", "color": "black", "weight": 1.0},
+        style_function=lambda x: {
+            "fillColor": "#3156de",
+            "color": "black",
+            "weight": 1.0,
+        },
     ).add_to(map)
 
     # Add markers to signify study sites:
-    for _, site in glacier_sites.iterrows():
-        folium.Marker(
-            location=[site['LAT'], site['LON']],
-            popup=f"Official Name: {site['Official_n']}",
-            icon=folium.Icon(color='blue', icon="info-sign"),
-        ).add_to(map)
+    tooltip = folium.GeoJsonTooltip(
+        fields=["Glacier_ID", "Official_name"],
+        aliases=["ID", "Name"],
+        localize=True,
+        sticky=False,
+        labels=True,
+        style="""
+            background-color: #F0EFEF;
+            border: 2px solid black;
+            border-radius: 3px;
+            box-shadow: 3px;
+        """,
+        max_width=400,
+    )
+    folium.GeoJson(
+        glacier_sites,
+        name="Iceberg Study Sites",
+        zoom_on_click=True,
+        marker=folium.Marker(icon=folium.Icon(icon="star")),
+        tooltip=tooltip,
+    ).add_to(map)
 
-    return st_folium(map, use_container_width=True)
+    return st_folium(map, returned_objects=[], use_container_width=True)
+
 
 def calculate_dominant_angle(gdf):
     """

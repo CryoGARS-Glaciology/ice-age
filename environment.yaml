@@ -2,9 +2,12 @@ name: ice_age
 channels:
   - conda-forge
 dependencies:
+  - duckdb
   - geopandas
+  - ibis-duckdb
+  - ibis-framework
   - python-graphviz
   - seaborn
-  - streamlit=1.47
+  - shapely[version=">=2,<3"]
+  - streamlit
   - streamlit-folium
-

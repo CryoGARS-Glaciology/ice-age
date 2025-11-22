@@ -1,6 +1,11 @@
 import streamlit as st
 
-from modules.statistics import load_site_names, load_statistics, load_periods
+from modules.statistics import (
+    load_site_names,
+    load_statistics,
+    load_periods,
+    key_statistics,
+)
 
 st.title("📊 Iceberg Statistics Dashboard")
 
@@ -17,6 +22,8 @@ with menu_col1:
         format_func=lambda x: x["label"],
     )
 
+date_range = None
+
 if site_name:
     with menu_col2:
         date_range = st.selectbox(
@@ -26,19 +33,36 @@ if site_name:
             placeholder="Filter to an observation period",
             format_func=lambda x: f"{x['start_date']} to {x['end_date']}",
         )
-else:
-    date_range = None
 
-if site_name or date_range:
+if site_name:
     loader_args = dict(site_name=site_name["Glacier_ID"])
     if date_range:
         loader_args["date"] = date_range["Date_start"]
 
-    data = load_statistics(**loader_args)
+    st.header("Key Statistics")
+    key_stats = key_statistics(**loader_args)
+
+    for _, row in key_stats.iterrows():
+        with st.container(width="stretch", border=True):
+            columns = st.columns(7)
+
+            for index, metric_name in enumerate(
+                [
+                    "Observation Start",
+                    "Number of Days",
+                    "Draft Mean",
+                    "Melt Rate",
+                    "Melt Rate Uncertainty",
+                    "Surface Area Mean",
+                    "Volume change over time",
+                ]
+            ):
+                columns[index].metric(label=metric_name, value=row[metric_name])
 
     st.write("### Raw data:")
-    st.dataframe(data)
+    data = load_statistics(**loader_args)
 
+    st.dataframe(data)
     st.download_button(
         label="Download .csv file",
         help="Download the above shown data as a .csv file",

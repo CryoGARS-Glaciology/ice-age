@@ -99,10 +99,8 @@ def key_statistics(site_name: str, date: str = None) -> pd.DataFrame:
                 table.Surface_Area_mean.mean().round(2).name("Surface Area Mean"),
                 table.Draft_mean.mean().round(2).name("Draft Mean"),
                 table.dVdt_mean.mean().round(2).name("Volume change over time"),
-                table.Melt_Rate.mean().round(2).name("Melt Rate"),
-                table.Melt_Rate_uncertainty.mean()
-                .round(2)
-                .name("Melt Rate Uncertainty"),
+                table.Melt_Rate.mean().name("Melt Rate"),
+                table.Melt_Rate_uncertainty.mean().name("Melt Rate Uncertainty"),
             ]
         )
         .mutate(**{"Observation Start": MELT_RATES.Date_start.strftime(DATE_FORMAT)})

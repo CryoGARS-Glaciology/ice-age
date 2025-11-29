@@ -5,6 +5,7 @@ from modules.statistics import (
     load_statistics,
     load_periods,
     key_statistics,
+    key_statistics_chart_data,
 )
 
 st.title("📊 Iceberg Statistics Dashboard")
@@ -39,29 +40,59 @@ if site_name:
     if date_range:
         loader_args["date"] = date_range["Date_start"]
 
-    st.header("Key Statistics")
     key_stats = key_statistics(**loader_args)
-
-    for _, row in key_stats.iterrows():
-        with st.container(width="stretch", border=True):
-            columns = st.columns(7)
-
-            for index, metric_name in enumerate(
-                [
-                    "Observation Start",
-                    "Number of Days",
-                    "Draft Mean",
-                    "Melt Rate",
-                    "Melt Rate Uncertainty",
-                    "Surface Area Mean",
-                    "Volume change over time",
-                ]
-            ):
-                columns[index].metric(label=metric_name, value=row[metric_name])
-
-    st.write("### Raw data:")
+    chart_data = key_statistics_chart_data(**loader_args)
     data = load_statistics(**loader_args)
 
+    st.header("Key Statistics")
+    for _, row in key_stats.iterrows():
+        row_chart_data = chart_data[
+            chart_data["Observation Start"] == row["Observation Start"]
+        ].reset_index()
+        with st.container(width="stretch", border=True):
+            with st.container(width="stretch"):
+                columns = st.columns(4)
+
+                for index, metric_name in enumerate(
+                    [
+                        "Observation Start",
+                        "Draft Mean",
+                        "Melt Rate",
+                        "Melt Rate Uncertainty",
+                    ]
+                ):
+                    columns[index].metric(
+                        label=metric_name,
+                        value=row[metric_name],
+                    )
+                    if metric_name != "Observation Start":
+                        with columns[index].expander("Chart"):
+                            st.line_chart(
+                                data=row_chart_data[metric_name].astype("float"),
+                                y_label=metric_name,
+                                x_label="Observation #",
+                            )
+
+            with st.container(width="stretch"):
+                columns = st.columns(4)
+
+                for index, metric_name in enumerate(
+                    [
+                        "Number of Days",
+                        "Surface Area Mean",
+                        "Volume change over time",
+                    ]
+                ):
+                    columns[index].metric(label=metric_name, value=row[metric_name])
+                    if metric_name != "Number of Days":
+                        with columns[index].expander("Chart"):
+                            st.line_chart(
+                                data=row_chart_data[metric_name].astype("float"),
+                                y_label=metric_name,
+                                x_label="Observation #",
+                            )
+
+    st.write("## Raw data")
     st.dataframe(data)
     st.download_button(
         label="Download .csv file",

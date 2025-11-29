@@ -3,7 +3,7 @@ import streamlit as st
 from modules.plotting import overview_map, distribution_plot
 
 st.html(
-    '''
+    """
     <h1 style="
         font-family: 'Bungee Shade', 'Audiowide', sans-serif;
         font-size: 40px;
@@ -13,7 +13,7 @@ st.html(
         -webkit-text-fill-color: transparent;">
         ICE-AGE Innovation: Empowering Iceberg Analysis in Greenland Environments
     </h1>
-    ''',
+    """,
 )
 
 # Brief description of the app
@@ -26,11 +26,11 @@ st.text(
 map_style = st.sidebar.selectbox(
     "Select Map Style",
     options=["CartoDB positron", "CartoDB dark_matter"],
-    index=0  #This line sets the default, change to 1 for dark_matter default.
+    index=0,  # This line sets the default, change to 1 for dark_matter default.
 )
 st.sidebar.info(
     "ICE-AGE will be under steady development and the data updated continuously! "
-    "The Data will be archived at the Arctic Data Center and web app source dode is "
+    "The Data will be archived at the Arctic Data Center and web app source code is "
     "available via GitHub. "
 )
 
@@ -61,5 +61,3 @@ with st.expander("Regional", expanded=True):
     st.subheader("Iceberg size distributions across time and location")
     # Distribution plot
     st.pyplot(distribution_plot())
-
-

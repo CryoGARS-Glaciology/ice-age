@@ -107,6 +107,31 @@ def key_statistics(site_name: str, date: str = None) -> pd.DataFrame:
     ).execute()
 
 
+def key_statistics_chart_data(site_name: str, date: str = None) -> pd.DataFrame:
+    """
+    Get key statistics data for the charts in the metrics display.
+    See ::py:func:`key_statistics` for loaded columns.
+
+    :param site_name: Site name to filter by
+    :param date: Optionally further filter by date
+
+    :return:
+        Dataframe with results.
+    """
+    return (
+        filter_site(site_name, date).select(
+            [
+                MELT_RATES.Date_start.name("Observation Start"),
+                MELT_RATES.Surface_Area_mean.round(2).name("Surface Area Mean"),
+                MELT_RATES.Draft_mean.round(2).name("Draft Mean"),
+                MELT_RATES.dVdt_mean.round(2).name("Volume change over time"),
+                MELT_RATES.Melt_Rate.name("Melt Rate"),
+                MELT_RATES.Melt_Rate_uncertainty.name("Melt Rate Uncertainty"),
+            ]
+        )
+    ).execute()
+
+
 def load_statistics(site_name: str, date: str = None) -> pd.DataFrame:
     """
     Load statistics for a site name and optionally filter by the observed

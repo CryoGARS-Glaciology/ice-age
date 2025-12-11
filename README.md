@@ -1,8 +1,13 @@
 # Iceberg Catalog for Analysis of Greenland Environments: ICE-AGE
 
 ## About
-Interactive web application for visualizing and extracting statistics from
-Greenland's Icebergs.
+
+Freshwater flux from ice-sheet mass loss raises global sea level, influences biogeochemical systems and fisheries, 
+and modifies water mass properties, which can feedback into both regional and global ocean circulation. 
+In particular, icebergs calved from marine-terminating glaciers are critical vectors for transporting freshwater and bioessential 
+micronutrients at both local and remote scales. To better enable iceberg data exploration and research activities, we have developed 
+ICE-AGE, an interactive web application for visualizing and extracting statistics of Greenland's Icebergs. Instructions for running
+ICE-AGE are provided below.
 
 ## Running the application
 The below setup and running instructions assume you have a working installation
@@ -11,7 +16,7 @@ uses the [mamba](https://mamba.readthedocs.io/en/latest/installation/mamba-insta
 package manager, which is a [drop-in replacement](https://mamba.readthedocs.io/en/latest/user_guide/mamba.html) 
 for `conda`. All the commands used with `conda` can be executed the same manner with `mamba`.
 
-All set up and running commands below are executed in a terminal.
+ICE-AGE set-up and commands shown below are executed in a terminal.
 
 ### Conda environment setup
 * Clone this repository to a local path on your machine
@@ -60,14 +65,21 @@ and development continued in this repository.
 
 ## Development Team
 * Twila A. Moon[^1] (Project PI)
-* Dustin Carroll[^2]
-* Ellyn Enderlin[^3]
-* Aman KC[^3]
-* Alexandra Friel[^3]
-* Joachim Meyer[^4]
+* Dustin Carroll[^2][^3]
+* Ellyn Enderlin[^4]
+* Aman KC[^4]
+* Alexandra Friel[^4]
+* Joachim Meyer[^5]
 
 Affiliations:
 [^1]: University of Colorado Boulder
-[^2]: San Jose State University
-[^3]: Boise State University
-[^4]: SciTenia LLC
+[^2]: Moss Landing Marine Laboratories, San Josê State University
+[^3]: Jet Propulsion Laboratory, California Institute of Technology
+[^4]: Boise State University
+[^5]: SciTenia LLC
+
+## Funding
+ICE-AGE development and the associated research has been supported by the U.S. National Science Foundation Office of Polar Programs (grant no. 2052549).
+
+<img src="https://previews.us-east-1.widencdn.net/preview/39958271/assets/asset-view/ee386c26-c5fb-419d-8f7b-bed1a1e84e60/thumbnail/eyJ3Ijo2MDAsImgiOjYwMCwic2NvcGUiOiJhcHAifQ==?sig.ver=1&sig.keyId=us-east-1.20240821&sig.expires=1765476000&sig=KA2usUx_6ebvhjVYw60Wbl-yAzp2yd0AeSWOSyhs44A" width="100">
+

@@ -64,18 +64,18 @@ This app was first prototyped by [Alexandra Friel](https://github.com/alexandra-
 and development continued in this repository.
 
 ## Development Team
-* Twila A. Moon[^1] (Project PI)
-* Dustin Carroll[^2][^3]
-* Ellyn Enderlin[^4]
-* Aman KC[^4]
-* Alexandra Friel[^4]
+* Ellyn Enderlin[^1] (Project PI)
+* Twila A. Moon[^2] 
+* Dustin Carroll[^3][^4]
+* Aman KC[^1]
+* Alexandra Friel[^1]
 * Joachim Meyer[^5]
 
 Affiliations:
-[^1]: University of Colorado Boulder
-[^2]: Moss Landing Marine Laboratories, San Josê State University
-[^3]: Jet Propulsion Laboratory, California Institute of Technology
-[^4]: Boise State University
+[^1]: Boise State University
+[^2]: University of Colorado Boulder
+[^3]: Moss Landing Marine Laboratories, San Josê State University
+[^4]: Jet Propulsion Laboratory, California Institute of Technology
 [^5]: SciTenia LLC
 
 ## Funding

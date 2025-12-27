@@ -96,10 +96,10 @@ def key_statistics(site_name: str, date: str = None) -> pd.DataFrame:
         .aggregate(
             [
                 table.date_difference.mean().cast("int").name("Number of Days"),
-                table.Surface_Area_mean.mean().round(2).name("Surface Area Mean"),
-                table.Draft_mean.mean().round(2).name("Draft Mean"),
-                table.dVdt_mean.mean().round(2).name("Volume change over time"),
-                table.Melt_Rate.mean().name("Melt Rate"),
+                table.Surface_Area_mean.mean().round(2).name("Surface Area Mean (m^2)"),
+                table.Draft_mean.mean().round(2).name("Draft Mean (m)"),
+                table.dVdt_mean.mean().round(2).name("Volume change (m^3/day)"),
+                table.Melt_Rate.mean().name("Melt Rate (m/day)"),
                 table.Melt_Rate_uncertainty.mean().name("Melt Rate Uncertainty"),
             ]
         )
@@ -122,10 +122,10 @@ def key_statistics_chart_data(site_name: str, date: str = None) -> pd.DataFrame:
         filter_site(site_name, date).select(
             [
                 MELT_RATES.Date_start.name("Observation Start"),
-                MELT_RATES.Surface_Area_mean.round(2).name("Surface Area Mean"),
-                MELT_RATES.Draft_mean.round(2).name("Draft Mean"),
-                MELT_RATES.dVdt_mean.round(2).name("Volume change over time"),
-                MELT_RATES.Melt_Rate.name("Melt Rate"),
+                MELT_RATES.Surface_Area_mean.round(2).name("Surface Area Mean (m^2)"),
+                MELT_RATES.Draft_mean.round(2).name("Draft Mean (m)"),
+                MELT_RATES.dVdt_mean.round(2).name("Volume change (m^3/day)"),
+                MELT_RATES.Melt_Rate.name("Melt Rate (m/day)"),
                 MELT_RATES.Melt_Rate_uncertainty.name("Melt Rate Uncertainty"),
             ]
         )

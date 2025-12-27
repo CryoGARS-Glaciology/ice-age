@@ -8,6 +8,9 @@ from modules.statistics import (
     key_statistics_chart_data,
 )
 
+with open("pages/statistics.css", "r") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
 st.title("📊 Iceberg Statistics Dashboard")
 
 with st.container():
@@ -44,7 +47,7 @@ if site_name:
     chart_data = key_statistics_chart_data(**loader_args)
     data = load_statistics(**loader_args)
 
-    st.header("Key Statistics")
+    st.header("Key Iceberg Statistics")
     for _, row in key_stats.iterrows():
         row_chart_data = chart_data[
             chart_data["Observation Start"] == row["Observation Start"]
@@ -56,13 +59,18 @@ if site_name:
                 for index, metric_name in enumerate(
                     [
                         "Observation Start",
-                        "Draft Mean",
-                        "Melt Rate",
+                        "Draft Mean (m)",
+                        "Melt Rate (m/day)",
                         "Melt Rate Uncertainty",
                     ]
                 ):
+                    if metric_name == "Observation Start":
+                        label = f":material/date_range: {metric_name}"
+                    else:
+                        label = f"_{metric_name}_"
+
                     columns[index].metric(
-                        label=metric_name,
+                        label=label,
                         value=row[metric_name],
                     )
                     if metric_name != "Observation Start":
@@ -79,11 +87,13 @@ if site_name:
                 for index, metric_name in enumerate(
                     [
                         "Number of Days",
-                        "Surface Area Mean",
-                        "Volume change over time",
+                        "Surface Area Mean (m^2)",
+                        "Volume change (m^3/day)",
                     ]
                 ):
-                    columns[index].metric(label=metric_name, value=row[metric_name])
+                    columns[index].metric(
+                        label=f"_{metric_name}_", value=row[metric_name]
+                    )
                     if metric_name != "Number of Days":
                         with columns[index].expander("Chart"):
                             st.line_chart(

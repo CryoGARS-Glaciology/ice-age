@@ -38,20 +38,68 @@ if site_name:
             format_func=lambda x: f"{x['start_date']} to {x['end_date']}",
         )
 
+
+def hide_button(site_name, date, metric_name):
+    button_key = button_id(site_name, date, metric_name, True)
+    st.session_state[button_key] = True
+
+
+def button_id(site_name, date, metric_name, state=False):
+    base_name = f"{site_name}_{date}_{metric_name}"
+    if state:
+        return base_name + "_visible"
+    else:
+        return base_name
+
+
+@st.fragment
+def load_chart(site_name, date, metric_name):
+    button_key = button_id(site_name, date, metric_name, True)
+    data_loaded = st.session_state.get(button_key, False)
+
+    with st.expander("Chart"):
+        if not data_loaded:
+            if st.button(
+                    "Load Data",
+                    key=button_id(site_name, date, metric_name),
+                    type="secondary",
+                    on_click=hide_button,
+                    args=(site_name, date, metric_name),
+            ):
+                st.session_state[button_key] = True
+        else:
+            with st.spinner("Loading chart"):
+                chart_data = key_statistics_chart_data(site_name, date)
+                st.line_chart(
+                    data=chart_data[metric_name].astype("float"),
+                    y_label=metric_name,
+                    x_label="Observation #",
+                )
+
+
+def chart_container(column, site_name, row, metric_name):
+    button_key = button_id(
+        site_name["Glacier_ID"], row["Observation Start"], metric_name, True
+    )
+    st.session_state[button_key] = False
+
+    with column.container():
+        load_chart(
+            site_name["Glacier_ID"], row["Observation Start"],
+            metric_name
+        )
+
+
 if site_name:
     loader_args = dict(site_name=site_name["Glacier_ID"])
     if date_range:
         loader_args["date"] = date_range["Date_start"]
 
     key_stats = key_statistics(**loader_args)
-    chart_data = key_statistics_chart_data(**loader_args)
     data = load_statistics(**loader_args)
 
     st.header("Key Iceberg Statistics")
     for _, row in key_stats.iterrows():
-        row_chart_data = chart_data[
-            chart_data["Observation Start"] == row["Observation Start"]
-        ].reset_index()
         with st.container(width="stretch", border=True):
             with st.container(width="stretch"):
                 columns = st.columns(4)
@@ -74,12 +122,7 @@ if site_name:
                         value=row[metric_name],
                     )
                     if metric_name != "Observation Start":
-                        with columns[index].expander("Chart"):
-                            st.line_chart(
-                                data=row_chart_data[metric_name].astype("float"),
-                                y_label=metric_name,
-                                x_label="Observation #",
-                            )
+                        chart_container(columns[index], site_name, row, metric_name)
 
             with st.container(width="stretch"):
                 columns = st.columns(4)
@@ -95,12 +138,7 @@ if site_name:
                         label=f"_{metric_name}_", value=row[metric_name]
                     )
                     if metric_name != "Number of Days":
-                        with columns[index].expander("Chart"):
-                            st.line_chart(
-                                data=row_chart_data[metric_name].astype("float"),
-                                y_label=metric_name,
-                                x_label="Observation #",
-                            )
+                        chart_container(columns[index], site_name, row, metric_name)
 
     st.write("## Raw data")
     st.dataframe(data)

@@ -2,5 +2,5 @@
 
 from streamlit.web.bootstrap import run
 
-real_script = 'streamlit_app.py'
+real_script = "ice_age_app.py"
 run(real_script, False, [], {})

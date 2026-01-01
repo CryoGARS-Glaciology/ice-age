@@ -6,5 +6,4 @@ from pathlib import Path
 # Statistics Dashboard
 MELT_RATES_DIR = Path("catalog-data/Melt-rates")
 
-NATURAL_EARTH_ZIP = "catalog-data/ne_110m_admin_0_countries.zip"
 SHAPEFILE_CATALOG_DIR = "catalog-data/iceberg-shapefiles"

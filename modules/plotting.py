@@ -9,7 +9,7 @@ from shapely.affinity import translate
 from streamlit_folium import st_folium
 from matplotlib.figure import Figure
 
-from .data_path import NATURAL_EARTH_ZIP, SHAPEFILE_CATALOG_DIR
+from .data_path import SHAPEFILE_CATALOG_DIR
 from modules.database import LOCATIONS
 
 
@@ -35,23 +35,7 @@ def overview_map(map_style):
         LOCATIONS.execute(), geometry="geometry", crs="EPSG:4326"
     )
 
-    world = gpd.read_file(NATURAL_EARTH_ZIP)
-    greenland = world[world["NAME"] == "Greenland"]
-
-    # This will convert Greenland to GeoJSON for Folium package:
-    greenland_geojson = greenland.to_crs("EPSG:4326").__geo_interface__
     map = folium.Map(location=[72, -40], zoom_start=4, tiles=map_style)
-
-    # Main Greenland shapefile customization:
-    folium.GeoJson(
-        greenland_geojson,
-        name="Greenland",
-        style_function=lambda x: {
-            "fillColor": "#3156de",
-            "color": "black",
-            "weight": 1.0,
-        },
-    ).add_to(map)
 
     # Add markers to signify study sites:
     tooltip = folium.GeoJsonTooltip(

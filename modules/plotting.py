@@ -7,27 +7,9 @@ import numpy as np
 
 from shapely.affinity import translate
 from streamlit_folium import st_folium
-from matplotlib.figure import Figure
 
 from .data_path import SHAPEFILE_CATALOG_DIR
 from modules.database import LOCATIONS
-
-
-# TODO: Make this plot based on the number of shapefiles in the database
-def distribution_plot() -> Figure:
-    """
-    Size distribution for number of icebergs per glacier ID.
-    Queries the database to retrieve information based on current data set.
-    """
-    plt.figure(dpi=200)
-    figure, axes = plt.subplots()
-    # plt.bar(names, values, color=cmap(norm(values)), edgecolor='black')
-
-    axes.set_xlabel("Study site", fontsize=12)
-    axes.set_ylabel("Corresponding Icebergs", fontsize=12)
-    # axes.set_xticks(rotation=45, ha='right')
-
-    return figure
 
 
 def overview_map(map_style):

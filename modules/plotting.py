@@ -8,8 +8,10 @@ import numpy as np
 from shapely.affinity import translate
 from streamlit_folium import st_folium
 
-from .data_path import SHAPEFILE_CATALOG_DIR
-from modules.database import LOCATIONS
+from database import LOCATIONS_TABLE
+from modules.database import get_table
+
+LOCATIONS = get_table(LOCATIONS_TABLE)
 
 
 def overview_map(map_style):

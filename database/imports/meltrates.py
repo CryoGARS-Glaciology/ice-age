@@ -1,6 +1,6 @@
 import duckdb
 
-TABLE_NAME = "meltrates"
+MELT_RATES_TABLE = "meltrates"
 SITE_COLUMNS = {
     "Site Abbreviation": "Glacier_ID",  # Matches the ID from the Locations CSV
     "Date start (YYYYMMDD)": "Date_start",
@@ -30,8 +30,8 @@ DATA_COLUMNS = {
 }
 CREATE_TABLE_SQL = (
     f"""
-    CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
         "Site" VARCHAR,
+    CREATE TABLE IF NOT EXISTS {MELT_RATES_TABLE} (
         "Date_start" DATE,
         "Date_end" DATE,
     """
@@ -42,10 +42,10 @@ CREATE_TABLE_SQL = (
 
 def add_meltrates(db_path, csv_dir):
     with duckdb.connect(db_path) as connection:
-        connection.execute(f"DROP TABLE IF EXISTS {TABLE_NAME};")
+        connection.execute(f"DROP TABLE IF EXISTS {MELT_RATES_TABLE};")
         connection.execute(CREATE_TABLE_SQL)
         for file in csv_dir.glob("*.csv"):
             connection.sql(
-                f"""INSERT INTO {TABLE_NAME} 
+                f"""INSERT INTO {MELT_RATES_TABLE}  
                 SELECT * FROM read_csv("{file}", dateformat="%Y%m%d")"""
             )

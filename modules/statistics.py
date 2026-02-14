@@ -1,11 +1,11 @@
 import ibis
 import pandas as pd
-
-from modules.database import LOCATIONS, MELT_RATES
 from ibis.expr.types import Table
 
-DATE_FORMAT = "%Y-%m-%d"
+from database import MELT_RATES_TABLE
+from modules.database import get_table
 
+DATE_FORMAT = "%Y-%m-%d"
 
 def load_site_names() -> pd.DataFrame:
     """
@@ -26,6 +26,7 @@ def load_site_names() -> pd.DataFrame:
         .distinct()
         .order_by(ibis.asc(LOCATIONS.Glacier_ID))
     ).execute()
+MELT_RATES = get_table(MELT_RATES_TABLE)
 
 
 def load_periods(site_name: str) -> pd.DataFrame:

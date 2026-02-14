@@ -2,6 +2,7 @@ name: ice_age
 channels:
   - conda-forge
 dependencies:
+  - colorcet
   - duckdb
   - geopandas
   - ibis-duckdb

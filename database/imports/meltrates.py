@@ -30,8 +30,8 @@ DATA_COLUMNS = {
 }
 CREATE_TABLE_SQL = (
     f"""
-        "Site" VARCHAR,
     CREATE TABLE IF NOT EXISTS {MELT_RATES_TABLE} (
+        "SiteID" VARCHAR,
         "Date_start" DATE,
         "Date_end" DATE,
     """

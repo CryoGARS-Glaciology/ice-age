@@ -6,26 +6,6 @@ from database import MELT_RATES_TABLE
 from modules.database import get_table
 
 DATE_FORMAT = "%Y-%m-%d"
-
-def load_site_names() -> pd.DataFrame:
-    """
-    Load all available glacier site names.
-    Used for user menus.
-
-    :return:
-        Dataframe with 'Glacier_ID' for filtering and a 'label' for dropdown label.
-    """
-    return (
-        LOCATIONS.join(MELT_RATES, LOCATIONS.Glacier_ID == MELT_RATES.Site)
-        .select(
-            [
-                LOCATIONS.Official_name.name("label"),
-                LOCATIONS.Glacier_ID,
-            ]
-        )
-        .distinct()
-        .order_by(ibis.asc(LOCATIONS.Glacier_ID))
-    ).execute()
 MELT_RATES = get_table(MELT_RATES_TABLE)
 
 
@@ -40,7 +20,7 @@ def load_periods(site_name: str) -> pd.DataFrame:
         for dropdown label.
     """
     return (
-        MELT_RATES.filter(MELT_RATES.Site == site_name)
+        MELT_RATES.filter(MELT_RATES.SiteID == site_name)
         .mutate(
             start_date=MELT_RATES.Date_start.strftime(DATE_FORMAT),
             end_date=MELT_RATES.Date_end.strftime(DATE_FORMAT),
@@ -62,7 +42,7 @@ def filter_site(site_name: str, date: str = None) -> Table:
     :return:
         Ibis table that can be fetched or further filtered
     """
-    query = MELT_RATES.filter(MELT_RATES.Site == site_name)
+    query = MELT_RATES.filter(MELT_RATES.SiteID == site_name)
     if date:
         query = query.filter(MELT_RATES.Date_start == date)
 

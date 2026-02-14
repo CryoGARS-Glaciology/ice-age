@@ -1,6 +1,6 @@
 import streamlit as st
 
-from modules.plotting import overview_map
+from modules.plotting import overview_map, last_viewed_site
 
 st.html(
     """
@@ -37,8 +37,13 @@ st.sidebar.info(
 
 # Create the map with interactive controls in an expandable section
 st.header("Study Sites in Greenland", divider=True)
-overview_map(map_style)
+map_click = overview_map(map_style)
 st.markdown("Years represented in study: 2011 - 2023")
+
+if map_click:
+    site = last_viewed_site(map_click)
+    if site:
+        st.switch_page("pages/Iceberg-Viewer.py", query_params={"site_id": site})
 
 st.header("Available Iceberg Metrics", divider=True)
 st.html(

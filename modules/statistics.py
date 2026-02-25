@@ -3,9 +3,9 @@ import pandas as pd
 from ibis.expr.types import Table
 
 from database import MELT_RATES_TABLE
+from modules import DATE_FORMAT
 from modules.database import get_table
 
-DATE_FORMAT = "%Y-%m-%d"
 MELT_RATES = get_table(MELT_RATES_TABLE)
 
 

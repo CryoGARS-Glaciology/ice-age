@@ -1,12 +1,14 @@
 import streamlit as st
 
+from database import MELT_RATES_TABLE
+from modules.database import get_table
 from modules.statistics import (
-    load_site_names,
-    load_statistics,
-    load_periods,
     key_statistics,
     key_statistics_chart_data,
+    load_periods,
+    load_statistics,
 )
+from modules.ui_elements import site_name_selector
 
 with open("pages/statistics.css", "r") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
@@ -18,13 +20,7 @@ with st.container():
     menu_col1, menu_col2 = st.columns(2)
 
 with menu_col1:
-    site_name = st.selectbox(
-        "Site Name:",
-        load_site_names().to_dict("records"),
-        index=None,
-        placeholder="Select a glacier site",
-        format_func=lambda x: x["label"],
-    )
+    site_name = site_name_selector(get_table(MELT_RATES_TABLE))
 
 date_range = None
 

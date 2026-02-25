@@ -1,6 +1,6 @@
 import streamlit as st
 
-from modules.plotting import overview_map, distribution_plot
+from modules.plotting import overview_map, last_viewed_site
 
 st.html(
     """
@@ -37,9 +37,13 @@ st.sidebar.info(
 
 # Create the map with interactive controls in an expandable section
 st.header("Study Sites in Greenland", divider=True)
-with st.expander("Map", expanded=True):
-    overview_map(map_style)
-    st.markdown("Years represented in study: 2011 - 2023")
+map_click = overview_map(map_style)
+st.markdown("Years represented in study: 2011 - 2023")
+
+if map_click:
+    site = last_viewed_site(map_click)
+    if site:
+        st.switch_page("pages/Iceberg-Viewer.py", query_params={"site_id": site})
 
 st.header("Available Iceberg Metrics", divider=True)
 st.html(
@@ -53,11 +57,3 @@ st.html(
     </div>
     """,
 )
-
-with st.expander("Change Over Time", expanded=True):
-    st.subheader("Volume change rate and elevation change rate over time")
-
-with st.expander("Regional", expanded=True):
-    st.subheader("Iceberg size distributions across time and location")
-    # Distribution plot
-    st.pyplot(distribution_plot())

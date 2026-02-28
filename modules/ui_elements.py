@@ -81,7 +81,7 @@ def date_range_selector(site_select: dict, selected_date_range=None):
         "Observation Periods (start - end):",
         options.to_dict("records"),
         index=index,
-        placeholder="Select a observation period",
+        placeholder="Select an observation period",
         format_func=lambda x: f"{x['start_formatted']} to {x['end_formatted']}",
         key=DATE_RANGE_KEY,
         on_change=update_date_range_url_param,

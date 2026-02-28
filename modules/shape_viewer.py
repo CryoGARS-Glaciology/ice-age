@@ -11,7 +11,7 @@ SHAPES = get_table(SHAPE_TABLE)
 
 def date_ranges_for_site(site_id: str) -> pd.DataFrame:
     """
-    Query the dabase for unique combinations of start and end dates for a given site.
+    Query the database for unique combinations of start and end dates for a given site.
 
     :param site_id: Site ID to query
 

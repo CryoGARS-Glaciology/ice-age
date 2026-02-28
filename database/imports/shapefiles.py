@@ -13,8 +13,14 @@ def add_shapefiles(db_path, shapefiles):
 
     # Combine
     union_query = " UNION ALL BY NAME ".join(
-        [f"SELECT *, '{os.path.basename(f)}' AS filename FROM ST_Read('{f}')" for f in
-            shp_files]
+        [
+            f"SELECT SiteID, IcebergID, "
+            f"strptime(DATE, '%Y%m%d')::DATE AS Date, "
+            f"'{os.path.basename(f)}' AS filename, "
+            "* EXCLUDE (SiteID, IcebergID, Date) "
+            f"FROM ST_Read('{f}')"
+            for f in shp_files
+        ]
     )
 
     # Execute and sort

@@ -70,11 +70,21 @@ def shape_color(map_element, color_map: dict) -> dict:
         Dictionary with style settings for the map element
     """
     iceberg_id = map_element["properties"]["IcebergID"]
+    # Show the date combinations with different styles. The early date has 0 as date_rank
+    if map_element["properties"]["date_rank"] == 0:
+        line_color = "black"
+        opacity = 0.7
+        weight = 1
+    else:
+        line_color = "darkgray"
+        opacity = 0.6
+        weight = 2
+
     return {
+        "color": line_color,
         "fillColor": color_map.get(iceberg_id, "#808080"),
-        "color": "black",
-        "weight": 1,
-        "fillOpacity": 0.5,
+        "weight": weight,
+        "fillOpacity": opacity,
     }
 
 

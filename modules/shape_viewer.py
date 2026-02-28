@@ -1,5 +1,7 @@
 import geopandas as gpd
+import ibis
 import pandas as pd
+import streamlit as st
 from ibis import _
 
 from database import SHAPE_TABLE
@@ -35,6 +37,7 @@ def date_ranges_for_site(site_id: str) -> pd.DataFrame:
     ).execute()
 
 
+@st.cache_data
 def map_data(site_select: dict, date_select: dict = None) -> gpd.GeoDataFrame:
     """
     Query the database and load all shapes for a given site and date range.
@@ -51,9 +54,11 @@ def map_data(site_select: dict, date_select: dict = None) -> gpd.GeoDataFrame:
         user_selection.append(
             SHAPES.Date.isin([date_select["start"], date_select["end"]])
         )
-    return (
-        SHAPES.filter(user_selection)
-        .mutate(observed_date=SHAPES.Date.as_timestamp("%Y%m%d").strftime("%Y-%m-%d"))
-        .to_pandas()
-        .set_crs("EPSG:3413", inplace=True)
+
+    window = ibis.window(group_by=["IcebergID", "filename"], order_by="Date")
+    shape_query = SHAPES.filter(user_selection).mutate(
+        date_rank=ibis.row_number().over(window),
+        observed_date=SHAPES.Date.as_timestamp("%Y%m%d").strftime("%Y-%m-%d")
     )
+
+    return shape_query.to_pandas().set_crs("EPSG:3413")

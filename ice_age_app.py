@@ -4,7 +4,7 @@ import streamlit as st
 #
 # # Site structure
 #   * Home - Start page
-#   * Iceberg Spatial Distributions - Interactive map to see spatial orientation of icebergs
+#   * Iceberg Viewer - Interactive map to see spatial orientation of icebergs
 #   * Statistics Dashboard - Loads and displays iceberg melt information and associated statistics.
 #   * Research Methods - Displays the methods used for data generation and work flow
 #   * Field Work Experiences - Fun pictures from the field!

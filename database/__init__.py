@@ -4,8 +4,8 @@ from .imports.meltrates import MELT_RATES_TABLE
 from .imports.shapefiles import SHAPE_TABLE
 
 __all__ = [
-    DB_PATH,
-    LOCATIONS_TABLE,
-    MELT_RATES_TABLE,
-    SHAPE_TABLE,
+    "DB_PATH",
+    "LOCATIONS_TABLE",
+    "MELT_RATES_TABLE",
+    "SHAPE_TABLE",
 ]

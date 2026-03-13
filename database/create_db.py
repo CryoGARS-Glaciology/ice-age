@@ -20,7 +20,3 @@ def populate_db():
     add_meltrates(DB_PATH, MELT_RATES_CSV_DIR)
     add_locations(DB_PATH, LOCATIONS_CSV)
     add_shapefiles(DB_PATH, SHAPEFILES_DIR)
-
-
-if __name__ == "__main__":
-    populate_db()

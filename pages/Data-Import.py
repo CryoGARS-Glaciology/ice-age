@@ -5,7 +5,13 @@ from modules.database import get_connection, get_table
 
 
 def create_db():
-    get_connection().disconnect()
+    # Attempt to disconnect any existing connection. On a fresh install where
+    # the database file does not yet exist, this may fail; in that case we
+    # ignore the error and proceed to populate the database.
+    try:
+        get_connection().disconnect()
+    except Exception:
+        pass
     get_table.clear()
     get_connection.clear()
     with st.spinner("Populating database..."):

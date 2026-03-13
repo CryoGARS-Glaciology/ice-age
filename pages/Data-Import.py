@@ -8,9 +8,14 @@ def create_db():
     get_connection().disconnect()
     get_table.clear()
     get_connection.clear()
-    populate_db()
-    st.toast("Database created.", icon="✅")
-    get_connection()
+    with st.spinner("Populating database..."):
+        try:
+            populate_db()
+        except Exception as exc:
+            st.error(f"Failed to populate database: {exc}")
+        else:
+            st.toast("Database created.", icon="✅")
+            get_connection()
 
 
 st.title("Data Import")

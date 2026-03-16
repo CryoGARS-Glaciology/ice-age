@@ -19,6 +19,7 @@ pg = st.navigation(
         "Data" : [
             st.Page("pages/Iceberg-Viewer.py"),
             st.Page("pages/Statistics-dashboard.py"),
+            st.Page("pages/Data-Import.py")
         ],
         "About" : [
             st.Page("pages/Research-methods.py"),

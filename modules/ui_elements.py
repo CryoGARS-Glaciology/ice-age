@@ -126,16 +126,3 @@ def load_site_names(join_table) -> pd.DataFrame:
     ).execute()
 
 
-def map_style_selector():
-    """
-    Selector on the sidebar to change the map background.
-    Calling this method will add the selector to the sidebar.
-
-    :return:
-        Streamlit sidebar selectbox object
-    """
-    return st.sidebar.selectbox(
-        "Select Map Style",
-        options=list(MAP_BACKGROUNDS.keys()),
-        index=0,
-    )

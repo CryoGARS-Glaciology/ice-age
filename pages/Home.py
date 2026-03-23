@@ -1,7 +1,7 @@
 import streamlit as st
 
+from modules.map_backgrounds import map_style_selector
 from modules.plotting import last_viewed_site, overview_map
-from modules.ui_elements import map_style_selector
 
 st.html(
     """

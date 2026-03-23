@@ -1,3 +1,5 @@
+import streamlit as st
+
 MAP_BACKGROUNDS = {
     "Stadia": {
         "tiles": "https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.jpg",
@@ -8,3 +10,18 @@ MAP_BACKGROUNDS = {
         "attribution": 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
     },
 }
+
+
+def map_style_selector() -> str:
+    """
+    Selector on the sidebar to change the map background.
+    Calling this method will add the selector to the sidebar.
+
+    :return:
+        Currently selected map style as string
+    """
+    return st.sidebar.selectbox(
+        "Select Map Style",
+        options=list(MAP_BACKGROUNDS.keys()),
+        index=0,
+    )

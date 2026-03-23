@@ -5,6 +5,7 @@ from ibis.expr.types import Table
 
 from database import LOCATIONS_TABLE
 from modules.database import get_table
+from modules.map_backgrounds import MAP_BACKGROUNDS
 from modules.shape_viewer import date_ranges_for_site
 
 LOCATIONS = get_table(LOCATIONS_TABLE)
@@ -123,3 +124,5 @@ def load_site_names(join_table) -> pd.DataFrame:
         .distinct()
         .order_by(ibis.asc(LOCATIONS.Glacier_ID))
     ).execute()
+
+

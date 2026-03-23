@@ -6,6 +6,7 @@ from streamlit_folium import st_folium
 
 from database import LOCATIONS_TABLE
 from modules.database import get_table
+from modules.map_backgrounds import MAP_BACKGROUNDS
 
 LOCATIONS = get_table(LOCATIONS_TABLE)
 
@@ -19,10 +20,17 @@ def overview_map(map_style):
     :return:
         st_folium() map object
     """
+    map_style = MAP_BACKGROUNDS[map_style]
     glacier_sites = gpd.GeoDataFrame(
         LOCATIONS.execute(), geometry="geometry", crs="EPSG:4326"
     )
-    map = folium.Map(location=[72, -40], zoom_start=4, tiles=map_style)
+
+    map = folium.Map(
+        location=[72, -40],
+        zoom_start=4,
+        tiles=map_style["tiles"],
+        attr=map_style["attribution"],
+    )
 
     # Add markers to signify study sites:
     tooltip = folium.GeoJsonTooltip(

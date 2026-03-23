@@ -1,6 +1,7 @@
 import streamlit as st
 
-from modules.plotting import overview_map, last_viewed_site
+from modules.plotting import last_viewed_site, overview_map
+from modules.ui_elements import map_style_selector
 
 st.html(
     """
@@ -22,12 +23,7 @@ st.text(
     "easy access to iceberg identification, metrics, and imagery."
 )
 
-# You can alter the map properties here:
-map_style = st.sidebar.selectbox(
-    "Select Map Style",
-    options=["CartoDB positron", "CartoDB dark_matter"],
-    index=0,  # This line sets the default, change to 1 for dark_matter default.
-)
+map_style = map_style_selector()
 st.sidebar.info(
     "ICE-AGE will be under steady development and the data updated continuously! "
     "The Data will be archived at the Arctic Data Center and web app source code is "

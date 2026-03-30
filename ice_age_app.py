@@ -1,5 +1,7 @@
 import streamlit as st
 
+from modules.database import db_exists
+
 # Application entry point
 #
 # # Site structure
@@ -10,17 +12,25 @@ import streamlit as st
 #   * Field Work Experiences - Fun pictures from the field!
 #   * Acknowledgements - Displays authors and award numbers.
 
+if db_exists():
+    data_pages = [
+        st.Page("pages/Iceberg-Viewer.py"),
+        st.Page("pages/Statistics-dashboard.py"),
+    ]
+else:
+    data_pages = []
+
+data_pages += [
+    st.Page("pages/Data-Import.py"),
+]
+
 st.set_page_config(layout="wide")
 pg = st.navigation(
     {
         "": [
             st.Page("pages/Home.py", default=True)
         ],
-        "Data" : [
-            st.Page("pages/Iceberg-Viewer.py"),
-            st.Page("pages/Statistics-dashboard.py"),
-            st.Page("pages/Data-Import.py")
-        ],
+        "Data": data_pages,
         "About" : [
             st.Page("pages/Research-methods.py"),
             st.Page("pages/Field-Work-images.py"),

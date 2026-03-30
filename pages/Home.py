@@ -1,5 +1,6 @@
 import streamlit as st
 
+from modules.database import db_exists
 from modules.map_backgrounds import map_style_selector
 from modules.plotting import last_viewed_site, overview_map
 
@@ -17,29 +18,29 @@ st.html(
     """,
 )
 
-# Brief description of the app
 st.text(
     "The ICE-AGE catalog is a powerful tool for iceberg research, offering "
     "easy access to iceberg identification, metrics, and imagery."
 )
 
-map_style = map_style_selector()
-st.sidebar.info(
-    "ICE-AGE will be under steady development and the data updated continuously! "
-    "The Data will be archived at the Arctic Data Center and web app source code is "
-    "available via GitHub. "
-)
+if db_exists():
+    st.header("Study Sites in Greenland", divider=True)
+    map_style = map_style_selector()
+    map_click = overview_map(map_style)
 
-
-# Create the map with interactive controls in an expandable section
-st.header("Study Sites in Greenland", divider=True)
-map_click = overview_map(map_style)
-st.markdown("Years represented in study: 2011 - 2023")
-
-if map_click:
-    site = last_viewed_site(map_click)
-    if site:
-        st.switch_page("pages/Iceberg-Viewer.py", query_params={"site_id": site})
+    if map_click:
+        site = last_viewed_site(map_click)
+        if site:
+            st.switch_page("pages/Iceberg-Viewer.py", query_params={"site_id": site})
+else:
+    st.header("Setup instructions", divider=True)
+    st.text(
+        "To use the ICE-AGE catalog, you will need to set up the database and import "
+        "the underlying data from a published Zenodo data set. Please go to the "
+        "Data Import page for instructions."
+    )
+    if st.button("Go to Data Import", type="primary"):
+        st.switch_page("pages/Data-Import.py")
 
 st.header("Available Iceberg Metrics", divider=True)
 st.html(

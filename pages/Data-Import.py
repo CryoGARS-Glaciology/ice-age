@@ -1,27 +1,22 @@
 import streamlit as st
 
 from database.create_db import populate_db
-from modules.database import get_connection, get_table
+from modules.database import clear_db_cache, db_exists, get_connection
 
 
 def create_db():
-    # Attempt to disconnect any existing connection. On a fresh install where
-    # the database file does not yet exist, this may fail; in that case we
-    # ignore the error and proceed to populate the database.
-    try:
+    if db_exists():
         get_connection().disconnect()
-    except Exception:
-        pass
-    get_table.clear()
-    get_connection.clear()
-    with st.spinner("Populating database..."):
-        try:
-            populate_db()
-        except Exception as exc:
-            st.error(f"Failed to populate database: {exc}")
-        else:
-            st.toast("Database created.", icon="✅")
-            get_connection()
+
+    clear_db_cache()
+
+    try:
+        populate_db()
+    except Exception as exc:
+        st.error(f"Failed to populate database: {exc}")
+    else:
+        st.toast("Database created.", icon="✅")
+        get_connection()
 
 
 st.title("Data Import")

@@ -25,32 +25,39 @@ st.header(
     divider=True,
 )
 st.markdown(
-    "This page will guide you through the process on getting the downloaded data "
-    "into the local database."
+    "This page will guide you through the process on getting the downloaded Zenodo data "
+    "into the local database to start exploring the data. The setup requires basic "
+    "knowledge of the command line."
 )
 st.header("Steps", divider=True)
 st.markdown(
     """
-    ### Download the data from [Zenodo](https://zenodo.org/)
+    ### 1. Download the data from [Zenodo](https://zenodo.org/)
     
     All data for this app is publicly available on Zenodo.
     [LINK](https://)
     
-    ### Create a folder inside the application repository
+    ### 2. Create a folder inside the application repository
     
-    On your local machine, go to the root of the cloned repository. 
+    On your local machine, go to the root location where you copied the repository from GitHub. 
     ```
     cd /path/to/ice-age
     ```
-    Create a new folder for the data inside the repository.
+    Create a new folder for the application data inside the repository. This well serve
+    as the root folder for all the data files.
     ```
     mkdir catalog-data
     ```
-    Note that the folder name needs to be `catalog-data` for the import process to work. 
+    Note that the application expects the folder name needs to be __`catalog-data`__ for the 
+    import process to work. 
     
-    ### Move the downloaded data into the new folder
+    ### 3. Move the downloaded Zenodo data into the new folder
     
-    Once finished moving the data inside this folder, your folder structure should look like this:
+    Move the downloaded Zenodo data into the new location and unpack the archive. This
+    process can use the native file explorer of your operating system.
+    
+    Once finished, your folder structure should look similar to this, with the file names
+    matching the names of the Zenodo archive:
     ```
     catalog-data/
         meltrates-csv/
@@ -62,13 +69,21 @@ st.markdown(
         images/
         Glacier-Locations.csv
     ```
-    ### Populate the database  
+    ### 4. Populate the database  
+    
     Click the button below to populate the database with the data.
     """
 )
 
-st.button(
-    "Populate DB",
-    on_click=create_db,
-    type="primary",
+if st.button("Populate DB", type="primary"):
+    with st.spinner("Populating database..."):
+        populate_db()
+
+st.markdown(
+    """   
+        ### 5. All Done!
+        
+        You are now ready to explore the data. The side navigation bar now has additional
+        entries under the __"Data"__ category.
+        """
 )

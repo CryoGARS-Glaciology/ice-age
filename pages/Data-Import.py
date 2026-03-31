@@ -43,7 +43,7 @@ st.markdown(
     ```
     cd /path/to/ice-age
     ```
-    Create a new folder for the application data inside the repository. This well serve
+    Create a new folder for the application data inside the repository. This will serve
     as the root folder for all the data files.
     ```
     mkdir catalog-data
@@ -77,7 +77,7 @@ st.markdown(
 
 if st.button("Populate DB", type="primary"):
     with st.spinner("Populating database..."):
-        populate_db()
+        create_db()
 
 st.markdown(
     """   

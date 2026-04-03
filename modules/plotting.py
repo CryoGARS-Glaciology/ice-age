@@ -5,10 +5,8 @@ from shapely.geometry import box
 from streamlit_folium import st_folium
 
 from database import LOCATIONS_TABLE
-from modules.database import get_table
+from modules.database import db_table
 from modules.map_backgrounds import MAP_BACKGROUNDS
-
-LOCATIONS = get_table(LOCATIONS_TABLE)
 
 
 def overview_map(map_style):
@@ -22,7 +20,7 @@ def overview_map(map_style):
     """
     map_style = MAP_BACKGROUNDS[map_style]
     glacier_sites = gpd.GeoDataFrame(
-        LOCATIONS.execute(), geometry="geometry", crs="EPSG:4326"
+        db_table(LOCATIONS_TABLE).execute(), geometry="geometry", crs="EPSG:4326"
     )
 
     map = folium.Map(

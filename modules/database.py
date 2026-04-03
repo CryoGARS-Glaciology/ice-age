@@ -20,7 +20,7 @@ def get_connection():
 
 
 @st.cache_resource
-def get_table(table):
+def db_table(table):
     if db_exists():
         return get_connection().table(table)
     else:
@@ -33,5 +33,5 @@ def clear_db_cache() -> None:
     This is used when creating or reimporting the database.
     """
     db_exists.clear()
+    db_table.clear()
     get_connection.clear()
-    get_table.clear()

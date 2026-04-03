@@ -4,12 +4,11 @@ import streamlit as st
 from ibis.expr.types import Table
 
 from database import LOCATIONS_TABLE
-from modules.database import get_table
+from modules.database import db_table
 from modules.map_backgrounds import MAP_BACKGROUNDS
 from modules.shape_viewer import date_ranges_for_site
 
-LOCATIONS = get_table(LOCATIONS_TABLE)
-GLACIER_ID_KEY = LOCATIONS.Glacier_ID.get_name()
+GLACIER_ID_KEY = db_table(LOCATIONS_TABLE).Glacier_ID.get_name()
 
 SITE_SELECTOR_KEY = "site_name_selector"
 SITE_PARAM = "site_id"
@@ -114,15 +113,17 @@ def load_site_names(join_table) -> pd.DataFrame:
         Dataframe with 'Glacier_ID' for filtering and a 'label' for dropdown label.
     """
     return (
-        LOCATIONS.join(join_table, LOCATIONS.Glacier_ID == join_table.SiteID)
+        db_table(LOCATIONS_TABLE).join(
+            join_table, db_table(LOCATIONS_TABLE).Glacier_ID == join_table.SiteID
+        )
         .select(
             [
-                LOCATIONS.Official_name.name("label"),
-                LOCATIONS.Glacier_ID,
+                db_table(LOCATIONS_TABLE).Official_name.name("label"),
+                db_table(LOCATIONS_TABLE).Glacier_ID,
             ]
         )
         .distinct()
-        .order_by(ibis.asc(LOCATIONS.Glacier_ID))
+        .order_by(ibis.asc(db_table(LOCATIONS_TABLE).Glacier_ID))
     ).execute()
 
 

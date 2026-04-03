@@ -2,7 +2,7 @@ import streamlit as st
 from streamlit_folium import st_folium
 
 from database import SHAPE_TABLE
-from modules.database import get_table
+from modules.database import db_table
 from modules.plotting import iceberg_map
 from modules.shape_viewer import map_data
 from modules.ui_elements import (
@@ -14,7 +14,6 @@ from modules.ui_elements import (
 
 st.title("Iceberg Viewer")
 
-SHAPES = get_table(SHAPE_TABLE)
 query_params = st.query_params
 selected_site = query_params.get(SITE_PARAM, None)
 selected_dates = query_params.get(DATE_PARAM, None)
@@ -24,7 +23,7 @@ with st.container():
     menu_col_1, menu_col_2 = st.columns(2)
 
 with menu_col_1:
-    site_select = site_name_selector(SHAPES, selected_site)
+    site_select = site_name_selector(db_table(SHAPE_TABLE), selected_site)
 
 if site_select:
     with menu_col_2:

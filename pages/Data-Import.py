@@ -12,12 +12,11 @@ def create_db():
 
     try:
         populate_db()
+        st.toast("Database created.", icon="✅")
     except Exception as exc:
         st.error(f"Failed to populate database: {exc}")
-    else:
-        st.toast("Database created.", icon="✅")
-        get_connection()
 
+    st.rerun()
 
 st.title("Data Import")
 st.header(

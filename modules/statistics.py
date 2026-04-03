@@ -4,9 +4,7 @@ from ibis.expr.types import Table
 
 from database import MELT_RATES_TABLE
 from modules import DATE_FORMAT
-from modules.database import get_table
-
-MELT_RATES = get_table(MELT_RATES_TABLE)
+from modules.database import db_table
 
 
 def load_periods(site_name: str) -> pd.DataFrame:
@@ -20,14 +18,14 @@ def load_periods(site_name: str) -> pd.DataFrame:
         for dropdown label.
     """
     return (
-        MELT_RATES.filter(MELT_RATES.SiteID == site_name)
+        db_table(MELT_RATES_TABLE).filter(db_table(MELT_RATES_TABLE).SiteID == site_name)
         .mutate(
-            start_date=MELT_RATES.Date_start.strftime(DATE_FORMAT),
-            end_date=MELT_RATES.Date_end.strftime(DATE_FORMAT),
+            start_date=db_table(MELT_RATES_TABLE).Date_start.strftime(DATE_FORMAT),
+            end_date=db_table(MELT_RATES_TABLE).Date_end.strftime(DATE_FORMAT),
         )
-        .select(MELT_RATES.Date_start, "start_date", "end_date")
+        .select(db_table(MELT_RATES_TABLE).Date_start, "start_date", "end_date")
         .distinct()
-        .order_by(ibis.asc(MELT_RATES.Date_start))
+        .order_by(ibis.asc(db_table(MELT_RATES_TABLE).Date_start))
         .execute()
     )
 
@@ -42,9 +40,11 @@ def filter_site(site_name: str, date: str = None) -> Table:
     :return:
         Ibis table that can be fetched or further filtered
     """
-    query = MELT_RATES.filter(MELT_RATES.SiteID == site_name)
+    query = db_table(MELT_RATES_TABLE).filter(
+        db_table(MELT_RATES_TABLE).SiteID == site_name
+    )
     if date:
-        query = query.filter(MELT_RATES.Date_start == date)
+        query = query.filter(db_table(MELT_RATES_TABLE).Date_start == date)
 
     return query
 
@@ -69,11 +69,13 @@ def key_statistics(site_name: str, date: str = None) -> pd.DataFrame:
         Dataframe with results.
     """
     table = filter_site(site_name, date).mutate(
-        date_difference=MELT_RATES.Date_end.delta(MELT_RATES.Date_start, unit="days")
+        date_difference=db_table(MELT_RATES_TABLE).Date_end.delta(
+            db_table(MELT_RATES_TABLE).Date_start, unit="days"
+        )
     )
 
     return (
-        table.group_by(MELT_RATES.Date_start)
+        table.group_by(db_table(MELT_RATES_TABLE).Date_start)
         .aggregate(
             [
                 table.date_difference.mean().cast("int").name("Number of Days"),
@@ -84,7 +86,13 @@ def key_statistics(site_name: str, date: str = None) -> pd.DataFrame:
                 table.Melt_Rate_uncertainty.mean().name("Melt Rate Uncertainty"),
             ]
         )
-        .mutate(**{"Observation Start": MELT_RATES.Date_start.strftime(DATE_FORMAT)})
+        .mutate(
+            **{
+                "Observation Start": db_table(MELT_RATES_TABLE).Date_start.strftime(
+                    DATE_FORMAT
+                ),
+            }
+        )
     ).execute()
 
 
@@ -102,12 +110,18 @@ def key_statistics_chart_data(site_name: str, date: str = None) -> pd.DataFrame:
     return (
         filter_site(site_name, date).select(
             [
-                MELT_RATES.Date_start.name("Observation Start"),
-                MELT_RATES.Surface_Area_mean.round(2).name("Surface Area Mean (m^2)"),
-                MELT_RATES.Draft_mean.round(2).name("Draft Mean (m)"),
-                MELT_RATES.dVdt_mean.round(2).name("Volume change (m^3/day)"),
-                MELT_RATES.Melt_Rate.name("Melt Rate (m/day)"),
-                MELT_RATES.Melt_Rate_uncertainty.name("Melt Rate Uncertainty"),
+                db_table(MELT_RATES_TABLE).Date_start.name("Observation Start"),
+                db_table(MELT_RATES_TABLE).Surface_Area_mean.round(2).name(
+                    "Surface Area Mean (m^2)"
+                ),
+                db_table(MELT_RATES_TABLE).Draft_mean.round(2).name("Draft Mean (m)"),
+                db_table(MELT_RATES_TABLE).dVdt_mean.round(2).name(
+                    "Volume change (m^3/day)"
+                ),
+                db_table(MELT_RATES_TABLE).Melt_Rate.name("Melt Rate (m/day)"),
+                db_table(MELT_RATES_TABLE).Melt_Rate_uncertainty.name(
+                    "Melt Rate Uncertainty"
+                ),
             ]
         )
     ).execute()

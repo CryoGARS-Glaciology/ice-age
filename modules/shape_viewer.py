@@ -7,9 +7,7 @@ from ibis import selectors as s
 
 from database import SHAPE_TABLE
 from modules import DATE_FORMAT
-from modules.database import get_table
-
-SHAPES = get_table(SHAPE_TABLE)
+from modules.database import db_table
 
 
 def date_ranges_for_site(site_id: str) -> pd.DataFrame:
@@ -22,11 +20,11 @@ def date_ranges_for_site(site_id: str) -> pd.DataFrame:
         Dataframe with start and end dates
     """
     return (
-        SHAPES.filter(SHAPES.SiteID == site_id)
-        .group_by(SHAPES.IcebergID, SHAPES.filename)
+        db_table(SHAPE_TABLE).filter(db_table(SHAPE_TABLE).SiteID == site_id)
+        .group_by(db_table(SHAPE_TABLE).IcebergID, db_table(SHAPE_TABLE).filename)
         .aggregate(
-            start=SHAPES.Date.min(),
-            end=SHAPES.Date.max(),
+            start=db_table(SHAPE_TABLE).Date.min(),
+            end=db_table(SHAPE_TABLE).Date.max(),
         )
         .select("start", "end")
         .mutate(
@@ -50,17 +48,17 @@ def map_data(site_select: dict, date_select: dict = None) -> gpd.GeoDataFrame:
     :return:
         GeoDataFrame with all shapes for the given site and date range
     """
-    user_selection = [SHAPES.SiteID == site_select["Glacier_ID"]]
+    user_selection = [db_table(SHAPE_TABLE).SiteID == site_select["Glacier_ID"]]
     if date_select:
         user_selection.append(
-            SHAPES.Date.isin([date_select["start"], date_select["end"]])
+            db_table(SHAPE_TABLE).Date.isin([date_select["start"], date_select["end"]])
         )
 
     window = ibis.window(group_by=[_.IcebergID, _.filename], order_by=_.Date)
-    shape_query = SHAPES.filter(user_selection).select(
+    shape_query = db_table(SHAPE_TABLE).filter(user_selection).select(
         ~s.cols("Date", "filename"),
         date_rank=ibis.row_number().over(window),
-        observed_date=SHAPES.Date.strftime(DATE_FORMAT)
+        observed_date=db_table(SHAPE_TABLE).Date.strftime(DATE_FORMAT)
     )
 
     return shape_query.to_pandas().set_crs("EPSG:3413")

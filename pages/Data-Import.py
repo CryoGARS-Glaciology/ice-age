@@ -13,10 +13,10 @@ def create_db():
     try:
         populate_db()
         st.toast("Database created.", icon="✅")
+        st.rerun()
     except Exception as exc:
         st.error(f"Failed to populate database: {exc}")
 
-    st.rerun()
 
 st.title("Data Import")
 st.header(
@@ -78,11 +78,15 @@ if st.button("Populate DB", type="primary"):
     with st.spinner("Populating database..."):
         create_db()
 
-st.markdown(
-    """   
-        ### 5. All Done!
-        
-        You are now ready to explore the data. The side navigation bar now has additional
-        entries under the __"Data"__ category.
-        """
-)
+if db_exists():
+    st.markdown(
+        """   
+            ### 5. All Done!
+            
+            You are now ready to explore the data. The side navigation bar now has additional
+            entries under the __"Data"__ category. The homepage will now show the overview 
+            map with all iceberg study sites in Greenland.
+            """
+    )
+    if st.button("Home", type="primary"):
+        st.switch_page("pages/Home.py")

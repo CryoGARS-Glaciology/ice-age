@@ -2,7 +2,7 @@ import streamlit as st
 
 from modules.database import db_exists
 from modules.map_backgrounds import map_style_selector
-from modules.plotting import last_viewed_site, overview_map
+from modules.plotting import last_viewed_site, map_overlay_css, overview_map
 
 st.html(
     """
@@ -25,13 +25,39 @@ st.text(
 
 if db_exists():
     st.header("Study Sites in Greenland", divider=True)
+    map_overlay_css()
     map_style = map_style_selector()
-    map_click = overview_map(map_style)
 
-    if map_click:
-        site = last_viewed_site(map_click)
-        if site:
-            st.switch_page("pages/Iceberg-Viewer.py", query_params={"site_id": site})
+    with st.container(key="glacier-map-container"):
+        with st.container(key="glacier-map"):
+            map_click = overview_map(map_style)
+
+        with st.container(key="glacier-options"):
+            if map_click:
+                site = last_viewed_site(map_click)
+                if site:
+                    st.markdown(f"__Name__: {site["Official_name"]}")
+
+                    if site.get("has_shapes", False) or site.get("has_statistics", False):
+                        if st.button(
+                                "View Shapes", use_container_width=True,
+                                key="shapes-button"
+                        ):
+                            st.switch_page(
+                                "pages/Iceberg-Viewer.py",
+                                query_params={"site_id": site["Glacier_ID"]}
+                            )
+                        # TODO: Issue#11
+                        # if st.button(
+                        #         "Show Statistics", use_container_width=True,
+                        #         key="statistics-button"
+                        # ):
+                        #     st.switch_page(
+                        #         "pages/Statistics-dashboard.py",
+                        #         query_params={"site_id": site["Glacier_ID"]}
+                        #     )
+                else:
+                    st.text("Select a glacier site to see options.")
 else:
     st.header("Setup instructions", divider=True)
     st.text(

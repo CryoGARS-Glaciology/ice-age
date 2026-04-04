@@ -5,9 +5,31 @@ import streamlit as st
 from ibis import _
 from ibis import selectors as s
 
-from database import SHAPE_TABLE
+from database import LOCATIONS_TABLE, MELT_RATES_TABLE, SHAPE_TABLE
 from modules import DATE_FORMAT
 from modules.database import db_table
+
+
+def locations_with_shape() -> pd.DataFrame:
+    """
+    Return a Pandas DataFrame of all locations with a column to indicate if shapes
+    are available for that location.
+
+    :return:
+        DataFrame with locations and shape availability
+    """
+    return (
+        db_table(LOCATIONS_TABLE)
+        .mutate(
+            has_shapes=db_table(LOCATIONS_TABLE).Glacier_ID.isin(
+                db_table(SHAPE_TABLE).SiteID
+            ),
+            has_statistics=db_table(LOCATIONS_TABLE).Glacier_ID.isin(
+                db_table(MELT_RATES_TABLE).SiteID
+            ),
+        )
+        .execute()
+    )
 
 
 def date_ranges_for_site(site_id: str) -> pd.DataFrame:

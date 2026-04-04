@@ -42,7 +42,8 @@ def date_ranges_for_site(site_id: str) -> pd.DataFrame:
         Dataframe with start and end dates
     """
     return (
-        db_table(SHAPE_TABLE).filter(db_table(SHAPE_TABLE).SiteID == site_id)
+        db_table(SHAPE_TABLE)
+        .filter(db_table(SHAPE_TABLE).SiteID == site_id)
         .group_by(db_table(SHAPE_TABLE).IcebergID, db_table(SHAPE_TABLE).filename)
         .aggregate(
             start=db_table(SHAPE_TABLE).Date.min(),
@@ -77,10 +78,14 @@ def map_data(site_select: dict, date_select: dict = None) -> gpd.GeoDataFrame:
         )
 
     window = ibis.window(group_by=[_.IcebergID, _.filename], order_by=_.Date)
-    shape_query = db_table(SHAPE_TABLE).filter(user_selection).select(
-        ~s.cols("Date", "filename"),
-        date_rank=ibis.row_number().over(window),
-        observed_date=db_table(SHAPE_TABLE).Date.strftime(DATE_FORMAT)
+    shape_query = (
+        db_table(SHAPE_TABLE)
+        .filter(user_selection)
+        .select(
+            ~s.cols("Date", "filename"),
+            date_rank=ibis.row_number().over(window),
+            observed_date=db_table(SHAPE_TABLE).Date.strftime(DATE_FORMAT),
+        )
     )
 
     return shape_query.to_pandas().set_crs("EPSG:3413")

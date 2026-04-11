@@ -4,6 +4,15 @@ from modules.database import db_exists
 from modules.map_backgrounds import map_style_selector
 from modules.plotting import last_viewed_site, map_overlay_css, overview_map
 
+st.markdown(
+    """
+    <style>
+    @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 st.html(
     """
     <h1 style="
@@ -36,16 +45,17 @@ if db_exists():
             if map_click:
                 site = last_viewed_site(map_click)
                 if site:
-                    st.markdown(f"__Name__: {site["Official_name"]}")
+                    st.markdown(f"__Name__: {site['Official_name']}")
 
-                    if site.get("has_shapes", False) or site.get("has_statistics", False):
+                    if site.get("has_shapes", False) or site.get(
+                        "has_statistics", False
+                    ):
                         if st.button(
-                                "View Shapes", use_container_width=True,
-                                key="shapes-button"
+                            "View Shapes", use_container_width=True, key="shapes-button"
                         ):
                             st.switch_page(
                                 "pages/Iceberg-Viewer.py",
-                                query_params={"site_id": site["Glacier_ID"]}
+                                query_params={"site_id": site["Glacier_ID"]},
                             )
                         # TODO: Issue#11
                         # if st.button(
@@ -57,7 +67,16 @@ if db_exists():
                         #         query_params={"site_id": site["Glacier_ID"]}
                         #     )
                 else:
-                    st.text("Select a glacier site to see options.")
+                    st.markdown("""
+                    Select a glacier site to see options.
+                    
+                    **Map Legend:**
+                    """)
+                    with st.container(key="legend"):
+                        st.html(
+                            '<i class="fa-solid fa-map-marker" style="color: #0047AB; margin-right: 8px;"></i>Data available<br>'
+                            '<i class="fa-solid fa-map-marker" style="color: #808080; margin-right: 8px;"></i>No data available'
+                        )
 else:
     st.header("Setup instructions", divider=True)
     st.text(

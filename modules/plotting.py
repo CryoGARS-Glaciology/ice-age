@@ -1,17 +1,77 @@
 import colorcet as cc
 import folium
 import geopandas as gpd
+import streamlit as st
 from shapely.geometry import box
 from streamlit_folium import st_folium
 
-from database import LOCATIONS_TABLE
-from modules.database import db_table
 from modules.map_backgrounds import MAP_BACKGROUNDS
+from modules.shape_viewer import locations_with_shape
 
 
-def overview_map(map_style):
+def map_overlay_css():
     """
-    Overview map on the "Home" page
+    Add CSS styling for glacier map overlay controls.
+
+    :return:
+        st.markdown object with CSS info
+    """
+    return st.markdown(
+        """
+        <style>
+        .st-key-glacier-map-container {
+            position: relative;
+        }
+        .st-key-glacier-map {
+            width: 100%;
+        }
+        .st-key-glacier-options {
+            position: absolute !important;
+            top: 20px;
+            right: 20px;
+            z-index: 1000; /* Must be higher than Folium's layers */
+            width: 300px;
+            
+            /* UI Styling */
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid #ddd;
+            font-family: "Inter", "Segoe UI", Helvetica, Arial, sans-serif !important;
+            color: #31333F;
+        }
+        
+        .st-key-shapes-button button,
+        .st-key-statistics-button button {
+            background-color: #0047AB !important; /* Cobalt Blue */
+            color: white !important;
+            border: none !important;
+            border-radius: 8px !important;
+            padding: 0.6rem 1rem !important;
+            font-weight: 500 !important;
+            font-size: 16px !important;
+            letter-spacing: 0.3px !important;
+            transition: all 0.2s ease-in-out !important;
+        }
+
+        /* 3. Hover Effect */
+        .st-key-statistics-button button:hover,
+        .st-key-shapes-button button:hover {
+            background-color: #003380 !important;
+            transform: translateY(-1px); /* Subtle lift on hover */
+            box-shadow: 0 4px 8px rgba(0, 71, 171, 0.3) !important;
+        }
+        
+        /* 4. Heading Adjustment for Overlay */
+        </style>
+    """, unsafe_allow_html=True
+    )
+
+
+def overview_map(map_style: str) -> dict:
+    """
+    Create overview map for the Home page.
 
     :param map_style: User selected map style
 
@@ -20,52 +80,75 @@ def overview_map(map_style):
     """
     map_style = MAP_BACKGROUNDS[map_style]
     glacier_sites = gpd.GeoDataFrame(
-        db_table(LOCATIONS_TABLE).execute(), geometry="geometry", crs="EPSG:4326"
+        locations_with_shape(), geometry="geometry", crs="EPSG:4326"
     )
 
     map = folium.Map(
-        location=[72, -40],
-        zoom_start=4,
         tiles=map_style["tiles"],
         attr=map_style["attribution"],
     )
+    minx, miny, maxx, maxy = glacier_sites.total_bounds.tolist()
+    map.fit_bounds([[miny, minx], [maxy, maxx]])
 
-    # Add markers to signify study sites:
-    tooltip = folium.GeoJsonTooltip(
-        fields=["Official_name"],
-        aliases=["Name"],
-        localize=True,
-        sticky=False,
-        labels=True,
-        style="""
-            background-color: #F0EFEF;
-            border: 2px solid black;
-            border-radius: 3px;
-            box-shadow: 3px;
-        """,
-        max_width=400,
-    )
+    # Color each marker based on data availability in the database
+    # Grey: None
+    # Blue: Either shapes or statistics
+    marker_js = """
+    function(feature, latlng) {
+        var color = feature.properties.has_shapes ? 'blue' : 'gray';
+        if (color == 'grey') {
+            color = feature.properties.has_statistics ? 'blue' : 'gray';
+        };
+        return L.marker(latlng, {
+            icon: L.AwesomeMarkers.icon({
+                icon: 'star',
+                markerColor: color,
+                prefix: 'fa',
+                iconColor: 'white'
+            })
+        });
+    }
+    """
+
     folium.GeoJson(
         glacier_sites,
-        name="Iceberg Study Sites",
+        tooltip=folium.GeoJsonTooltip(
+            fields=["Official_name"],
+            aliases=["Name"],
+            localize=True,
+            sticky=False,
+            labels=True,
+            style="""
+                background-color: #F0EFEF;
+                border: 2px solid black;
+                border-radius: 3px;
+                box-shadow: 3px;
+            """,
+        ),
+        point_to_layer=folium.utilities.JsCode(marker_js),
         marker=folium.Marker(icon=folium.Icon(icon="star")),
-        tooltip=tooltip,
     ).add_to(map)
 
-    return st_folium(
-        map, use_container_width=True, returned_objects=["last_active_drawing"]
-    )
+    return st_folium(map, use_container_width=True)
 
 
-def last_viewed_site(map_click):
+def last_viewed_site(map_click: dict) -> dict | None:
+    """
+    Extract site properties from the last clicked map feature.
+
+    :param map_click: Map interaction data from st_folium
+
+    :return:
+        Dictionary with site properties or None if no feature was clicked
+    """
     map_click = map_click.get("last_active_drawing", {})
     if map_click:
-        return map_click.get("properties", {}).get("Glacier_ID")
+        return map_click.get("properties", {})
     else:
         return None
 
 
-def shape_color(map_element, color_map: dict) -> dict:
+def shape_color(map_element: dict, color_map: dict) -> dict:
     """
     Select a unique color for each iceberg from the color map.
 
@@ -76,7 +159,9 @@ def shape_color(map_element, color_map: dict) -> dict:
         Dictionary with style settings for the map element
     """
     iceberg_id = map_element["properties"]["IcebergID"]
-    # Show the date combinations with different styles. The early date has 0 as date_rank
+
+    # Show the date combinations with different styles.
+    # The early date has 0 as date_rank
     if map_element["properties"]["date_rank"] == 0:
         line_color = "black"
         opacity = 0.7
@@ -96,7 +181,7 @@ def shape_color(map_element, color_map: dict) -> dict:
 
 def unique_colors(iceberg_sites: gpd.GeoDataFrame) -> dict:
     """
-    Create a unique color for each iceberg
+    Create a unique color for each iceberg.
 
     :param iceberg_sites: GeoDataFrame with icebergs
 
@@ -108,9 +193,9 @@ def unique_colors(iceberg_sites: gpd.GeoDataFrame) -> dict:
     return {ice_id: palette[index] for index, ice_id in enumerate(iceberg_ids)}
 
 
-def iceberg_map(iceberg_sites: gpd.GeoDataFrame):
+def iceberg_map(iceberg_sites: gpd.GeoDataFrame) -> folium.Map:
     """
-    Create map with icebergs shapes
+    Create map with iceberg shapes.
 
     :param iceberg_sites: GeoDataFrame with icebergs to show in the map
 

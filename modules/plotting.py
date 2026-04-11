@@ -65,7 +65,8 @@ def map_overlay_css():
         
         /* 4. Heading Adjustment for Overlay */
         </style>
-    """, unsafe_allow_html=True
+    """,
+        unsafe_allow_html=True,
     )
 
 
@@ -95,10 +96,7 @@ def overview_map(map_style: str) -> dict:
     # Blue: Either shapes or statistics
     marker_js = """
     function(feature, latlng) {
-        var color = feature.properties.has_shapes ? 'blue' : 'gray';
-        if (color == 'grey') {
-            color = feature.properties.has_statistics ? 'blue' : 'gray';
-        };
+        var color = (feature.properties.has_shapes || feature.properties.has_statistics) ? 'blue' : 'gray';
         return L.marker(latlng, {
             icon: L.AwesomeMarkers.icon({
                 icon: 'star',
@@ -129,7 +127,11 @@ def overview_map(map_style: str) -> dict:
         marker=folium.Marker(icon=folium.Icon(icon="star")),
     ).add_to(map)
 
-    return st_folium(map, use_container_width=True)
+    return st_folium(
+        map,
+        use_container_width=True,
+        returned_objects=["last_active_drawing"],
+    )
 
 
 def last_viewed_site(map_click: dict) -> dict | None:

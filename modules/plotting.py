@@ -10,6 +10,12 @@ from modules.shape_viewer import locations_with_shape
 
 
 def map_overlay_css():
+    """
+    Add CSS styling for glacier map overlay controls.
+
+    :return:
+        st.markdown object with CSS info
+    """
     return st.markdown(
         """
         <style>
@@ -62,9 +68,10 @@ def map_overlay_css():
     """, unsafe_allow_html=True
     )
 
-def overview_map(map_style):
+
+def overview_map(map_style: str) -> dict:
     """
-    Overview map on the "Home" page
+    Create overview map for the Home page.
 
     :param map_style: User selected map style
 
@@ -125,7 +132,15 @@ def overview_map(map_style):
     return st_folium(map, use_container_width=True)
 
 
-def last_viewed_site(map_click):
+def last_viewed_site(map_click: dict) -> dict | None:
+    """
+    Extract site properties from the last clicked map feature.
+
+    :param map_click: Map interaction data from st_folium
+
+    :return:
+        Dictionary with site properties or None if no feature was clicked
+    """
     map_click = map_click.get("last_active_drawing", {})
     if map_click:
         return map_click.get("properties", {})
@@ -133,7 +148,7 @@ def last_viewed_site(map_click):
         return None
 
 
-def shape_color(map_element, color_map: dict) -> dict:
+def shape_color(map_element: dict, color_map: dict) -> dict:
     """
     Select a unique color for each iceberg from the color map.
 
@@ -144,7 +159,9 @@ def shape_color(map_element, color_map: dict) -> dict:
         Dictionary with style settings for the map element
     """
     iceberg_id = map_element["properties"]["IcebergID"]
-    # Show the date combinations with different styles. The early date has 0 as date_rank
+
+    # Show the date combinations with different styles.
+    # The early date has 0 as date_rank
     if map_element["properties"]["date_rank"] == 0:
         line_color = "black"
         opacity = 0.7
@@ -164,7 +181,7 @@ def shape_color(map_element, color_map: dict) -> dict:
 
 def unique_colors(iceberg_sites: gpd.GeoDataFrame) -> dict:
     """
-    Create a unique color for each iceberg
+    Create a unique color for each iceberg.
 
     :param iceberg_sites: GeoDataFrame with icebergs
 
@@ -176,9 +193,9 @@ def unique_colors(iceberg_sites: gpd.GeoDataFrame) -> dict:
     return {ice_id: palette[index] for index, ice_id in enumerate(iceberg_ids)}
 
 
-def iceberg_map(iceberg_sites: gpd.GeoDataFrame):
+def iceberg_map(iceberg_sites: gpd.GeoDataFrame) -> folium.Map:
     """
-    Create map with icebergs shapes
+    Create map with iceberg shapes.
 
     :param iceberg_sites: GeoDataFrame with icebergs to show in the map
 

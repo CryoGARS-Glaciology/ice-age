@@ -57,15 +57,15 @@ if db_exists():
                                 "pages/Iceberg-Viewer.py",
                                 query_params={"site_id": site["Glacier_ID"]},
                             )
-                        # TODO: Issue#11
-                        # if st.button(
-                        #         "Show Statistics", use_container_width=True,
-                        #         key="statistics-button"
-                        # ):
-                        #     st.switch_page(
-                        #         "pages/Statistics-dashboard.py",
-                        #         query_params={"site_id": site["Glacier_ID"]}
-                        #     )
+                        if st.button(
+                            "Show Statistics",
+                            use_container_width=True,
+                            key="statistics-button",
+                        ):
+                            st.switch_page(
+                                "pages/Statistics-dashboard.py",
+                                query_params={"site_id": site["Glacier_ID"]},
+                            )
                 else:
                     st.markdown("""
                     Select a glacier site to see options.

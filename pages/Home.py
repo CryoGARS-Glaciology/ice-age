@@ -3,6 +3,7 @@ import streamlit as st
 from modules.database import db_exists
 from modules.map_backgrounds import map_style_selector
 from modules.plotting import last_viewed_site, map_overlay_css, overview_map
+from modules.ui_elements import GLACIER_ID_KEY, shapes_button, statistics_button
 
 st.markdown(
     """
@@ -46,26 +47,10 @@ if db_exists():
                 site = last_viewed_site(map_click)
                 if site:
                     st.markdown(f"__Name__: {site['Official_name']}")
-
-                    if site.get("has_shapes", False) or site.get(
-                        "has_statistics", False
-                    ):
-                        if st.button(
-                            "View Shapes", use_container_width=True, key="shapes-button"
-                        ):
-                            st.switch_page(
-                                "pages/Iceberg-Viewer.py",
-                                query_params={"site_id": site["Glacier_ID"]},
-                            )
-                        if st.button(
-                            "Show Statistics",
-                            use_container_width=True,
-                            key="statistics-button",
-                        ):
-                            st.switch_page(
-                                "pages/Statistics-dashboard.py",
-                                query_params={"site_id": site["Glacier_ID"]},
-                            )
+                    if site.get("has_shapes", False):
+                        shapes_button(site[GLACIER_ID_KEY])
+                    if site.get("has_statistics", False):
+                        statistics_button(site[GLACIER_ID_KEY])
                 else:
                     st.markdown("""
                     Select a glacier site to see options.

@@ -1,6 +1,7 @@
 import ibis
 import pandas as pd
 import streamlit as st
+from ibis import _
 from ibis.expr.types import Table
 
 from database import LOCATIONS_TABLE
@@ -131,4 +132,71 @@ def load_site_names(join_table) -> pd.DataFrame:
         .order_by(ibis.asc(db_table(LOCATIONS_TABLE).Glacier_ID))
     ).execute()
 
+def _button_query_params(site: str, selected_date: str) -> dict:
+    """
+    Construct URL query parameters for switching pages via buttons.
 
+    :param site: The glacier site ID.
+    :param selected_date: The selected date range string.
+
+    :return:
+        Dictionary of query parameters.
+    """
+    query_param = {SITE_PARAM: site}
+
+    if selected_date:
+        query_param[DATE_PARAM] = selected_date
+
+    return query_param
+
+
+def shapes_button(site: str, selected_date: str, full_width=True, **kwargs):
+    """
+    Button to navigate to the Iceberg Viewer page.
+
+    :param site: The glacier site ID.
+    :param selected_date: The selected date range.
+    :param full_width: Whether the button should use the full container width.
+    :param kwargs: Additional arguments for the Streamlit button.
+    """
+    if st.button(
+        "View Shapes", use_container_width=full_width, key="shapes-button", **kwargs
+    ):
+        st.switch_page(
+            "pages/Iceberg-Viewer.py",
+            query_params=_button_query_params(site, selected_date),
+        )
+
+
+def statistics_button(site: str, selected_date: str, full_width=True, **kwargs):
+    """
+    Button to navigate to the Statistics Dashboard page.
+
+    :param site: The glacier site ID.
+    :param selected_date: The selected date range.
+    :param full_width: Whether the button should use the full container width.
+    :param kwargs: Additional arguments for the Streamlit button.
+    """
+    if st.button(
+        "Show Statistics",
+        use_container_width=full_width,
+        key="statistics-button",
+        **kwargs,
+    ):
+        st.switch_page(
+            "pages/Statistics-dashboard.py",
+            query_params=_button_query_params(site, selected_date),
+        )
+
+
+def has_records(table: str, site_name: str) -> bool:
+    """
+    Check if a table has any records for a specific site ID.
+
+    :param table: The name of the table to query.
+    :param site_name: The site ID to filter by.
+
+    :return:
+        True if records exist, False otherwise.
+    """
+    return len(db_table(table).filter(_.SiteID == site_name).head(1).execute()) > 0

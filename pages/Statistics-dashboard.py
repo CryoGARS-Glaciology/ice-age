@@ -1,6 +1,6 @@
 import streamlit as st
 
-from database import MELT_RATES_TABLE
+from database import MELT_RATES_TABLE, SHAPE_TABLE
 from modules.database import db_table
 from modules.statistics import (
     key_statistics,
@@ -10,6 +10,8 @@ from modules.statistics import (
 )
 from modules.ui_elements import (
     date_range_selector,
+    has_records,
+    shapes_button,
     site_and_date_query_params,
     site_name_selector,
 )
@@ -22,7 +24,16 @@ with open("pages/statistics.css", "r") as f:
 st.title("📊 Iceberg Statistics Dashboard")
 
 with st.container():
-    st.header("Filter")
+    col1, col2 = st.columns(2, vertical_alignment="bottom")
+    with col1:
+        st.header("Filter")
+    with col2:
+        _, right_col = st.columns([4, 1])
+        with right_col:
+            if selected_site and has_records(SHAPE_TABLE, selected_site):
+                shapes_button(
+                    selected_site, selected_dates, full_width=False, type="primary"
+                )
     menu_col1, menu_col2 = st.columns(2)
 
 with menu_col1:

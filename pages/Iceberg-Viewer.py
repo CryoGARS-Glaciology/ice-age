@@ -5,18 +5,17 @@ from database import SHAPE_TABLE
 from modules.database import db_table
 from modules.plotting import iceberg_map
 from modules.shape_viewer import map_data
+from modules.statistics import statistic_dates_for_site
 from modules.ui_elements import (
-    DATE_PARAM,
-    SITE_PARAM,
+    GLACIER_ID_KEY,
     date_range_selector,
+    site_and_date_query_params,
     site_name_selector,
 )
 
-st.title("Iceberg Viewer")
+selected_site, selected_dates = site_and_date_query_params()
 
-query_params = st.query_params
-selected_site = query_params.get(SITE_PARAM, None)
-selected_dates = query_params.get(DATE_PARAM, None)
+st.title("Iceberg Viewer")
 
 with st.container():
     st.header("Filter")
@@ -27,7 +26,8 @@ with menu_col_1:
 
 if site_select:
     with menu_col_2:
-        date_range = date_range_selector(site_select, selected_dates)
+        available_dates = statistic_dates_for_site(site_select[GLACIER_ID_KEY])
+        date_range = date_range_selector(available_dates, selected_dates)
 
 if site_select:
     st.header("Map")

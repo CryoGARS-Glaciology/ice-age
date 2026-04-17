@@ -119,9 +119,8 @@ def load_site_names(join_table) -> pd.DataFrame:
         Dataframe with 'Glacier_ID' for filtering and a 'label' for dropdown label.
     """
     return (
-        db_table(LOCATIONS_TABLE).join(
-            join_table, db_table(LOCATIONS_TABLE).Glacier_ID == join_table.SiteID
-        )
+        db_table(LOCATIONS_TABLE)
+        .join(join_table, db_table(LOCATIONS_TABLE).Glacier_ID == join_table.SiteID)
         .select(
             [
                 db_table(LOCATIONS_TABLE).Official_name.name("label"),

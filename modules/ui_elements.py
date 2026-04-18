@@ -131,7 +131,8 @@ def load_site_names(join_table) -> pd.DataFrame:
         .order_by(ibis.asc(db_table(LOCATIONS_TABLE).Glacier_ID))
     ).execute()
 
-def _button_query_params(site: str, selected_date: str) -> dict:
+
+def _button_query_params(site: str, selected_date: str | None) -> dict:
     """
     Construct URL query parameters for switching pages via buttons.
 
@@ -149,7 +150,7 @@ def _button_query_params(site: str, selected_date: str) -> dict:
     return query_param
 
 
-def shapes_button(site: str, selected_date: str, full_width=True, **kwargs):
+def shapes_button(site: str, selected_date: str = None, full_width=True, **kwargs):
     """
     Button to navigate to the Iceberg Viewer page.
 
@@ -167,7 +168,7 @@ def shapes_button(site: str, selected_date: str, full_width=True, **kwargs):
         )
 
 
-def statistics_button(site: str, selected_date: str, full_width=True, **kwargs):
+def statistics_button(site: str, selected_date: str = None, full_width=True, **kwargs):
     """
     Button to navigate to the Statistics Dashboard page.
 

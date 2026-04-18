@@ -24,8 +24,7 @@ with st.container():
     with col1:
         st.header("Filter")
     with col2:
-        _, right_col = st.columns([4, 1])
-        with right_col:
+        with st.container(horizontal_alignment="right"):
             if selected_site and has_records(MELT_RATES_TABLE, selected_site):
                 statistics_button(
                     selected_site, selected_dates, full_width=False, type="primary"

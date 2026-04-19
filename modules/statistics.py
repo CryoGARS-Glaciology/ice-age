@@ -15,8 +15,7 @@ def statistic_dates_for_site(site_name: str) -> pd.DataFrame:
     :param site_name: Glacier ID from the dropdown
 
     :return:
-        Dataframe with raw to start (for filtering) and formatted start and end date
-        for dropdown label.
+        Dataframe with raw (for filtering) and formatted (for labels) dates
     """
     return (
         db_table(MELT_RATES_TABLE)

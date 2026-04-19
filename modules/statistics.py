@@ -1,5 +1,6 @@
 import ibis
 import pandas as pd
+from ibis import _
 from ibis.expr.types import Table
 
 from database import MELT_RATES_TABLE
@@ -7,27 +8,29 @@ from modules import DATE_FORMAT
 from modules.database import db_table
 
 
-def load_periods(site_name: str) -> pd.DataFrame:
+def statistic_dates_for_site(site_name: str) -> pd.DataFrame:
     """
-    Load available observation periods for a given site.
+    Load available observation periods with statistics for a given site.
 
     :param site_name: Glacier ID from the dropdown
 
     :return:
-        Dataframe with raw to start (for filtering) and formatted start and end date
-        for dropdown label.
+        Dataframe with raw (for filtering) and formatted (for labels) dates
     """
     return (
-        db_table(MELT_RATES_TABLE).filter(db_table(MELT_RATES_TABLE).SiteID == site_name)
-        .mutate(
-            start_date=db_table(MELT_RATES_TABLE).Date_start.strftime(DATE_FORMAT),
-            end_date=db_table(MELT_RATES_TABLE).Date_end.strftime(DATE_FORMAT),
+        db_table(MELT_RATES_TABLE)
+        .filter(_.SiteID == site_name)
+        .select(
+            start=_.Date_start,
+            end=_.Date_end
         )
-        .select(db_table(MELT_RATES_TABLE).Date_start, "start_date", "end_date")
+        .mutate(
+            start_date=_.start.strftime(DATE_FORMAT),
+            end_date=_.end.strftime(DATE_FORMAT),
+        )
         .distinct()
-        .order_by(ibis.asc(db_table(MELT_RATES_TABLE).Date_start))
-        .execute()
-    )
+        .order_by(ibis.asc(_.start))
+    ).execute()
 
 
 def filter_site(site_name: str, date: str = None) -> Table:

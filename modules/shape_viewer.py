@@ -32,9 +32,9 @@ def locations_with_shape() -> pd.DataFrame:
     )
 
 
-def date_ranges_for_site(site_id: str) -> pd.DataFrame:
+def shape_dates_for_site(site_id: str) -> pd.DataFrame:
     """
-    Query the database for unique combinations of start and end dates for a given site.
+    Load unique combinations of start and end dates with available shapes for a given site.
 
     :param site_id: Site ID to query
 
@@ -51,8 +51,8 @@ def date_ranges_for_site(site_id: str) -> pd.DataFrame:
         )
         .select("start", "end")
         .mutate(
-            start_formatted=_.start.strftime(DATE_FORMAT),
-            end_formatted=_.end.strftime(DATE_FORMAT),
+            start_date=_.start.strftime(DATE_FORMAT),
+            end_date=_.end.strftime(DATE_FORMAT),
         )
         .order_by("start")
         .distinct()

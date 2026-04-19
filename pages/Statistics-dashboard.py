@@ -1,14 +1,22 @@
 import streamlit as st
 
-from database import MELT_RATES_TABLE
+from database import MELT_RATES_TABLE, SHAPE_TABLE
 from modules.database import db_table
 from modules.statistics import (
     key_statistics,
     key_statistics_chart_data,
-    load_periods,
     load_statistics,
+    statistic_dates_for_site,
 )
-from modules.ui_elements import site_name_selector
+from modules.ui_elements import (
+    date_range_selector,
+    has_records,
+    shapes_button,
+    site_and_date_query_params,
+    site_name_selector,
+)
+
+selected_site, selected_dates = site_and_date_query_params()
 
 with open("pages/statistics.css", "r") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
@@ -16,23 +24,26 @@ with open("pages/statistics.css", "r") as f:
 st.title("📊 Iceberg Statistics Dashboard")
 
 with st.container():
-    st.header("Filter")
+    col1, col2 = st.columns(2, vertical_alignment="bottom")
+    with col1:
+        st.header("Filter")
+    with col2:
+        with st.container(horizontal_alignment="right"):
+            if selected_site and has_records(SHAPE_TABLE, selected_site):
+                shapes_button(
+                    selected_site, selected_dates, full_width=False, type="primary"
+                )
     menu_col1, menu_col2 = st.columns(2)
 
 with menu_col1:
-    site_name = site_name_selector(db_table(MELT_RATES_TABLE))
+    site_name = site_name_selector(db_table(MELT_RATES_TABLE), selected_site)
 
 date_range = None
 
 if site_name:
     with menu_col2:
-        date_range = st.selectbox(
-            "Observation Periods:",
-            load_periods(site_name["Glacier_ID"]).to_dict("records"),
-            index=None,
-            placeholder="Filter to an observation period",
-            format_func=lambda x: f"{x['start_date']} to {x['end_date']}",
-        )
+        available_dates = statistic_dates_for_site(site_name["Glacier_ID"])
+        date_range = date_range_selector(available_dates, selected_dates)
 
 
 def hide_button(site_name, date, metric_name):
@@ -89,7 +100,7 @@ def chart_container(column, site_name, row, metric_name):
 if site_name:
     loader_args = dict(site_name=site_name["Glacier_ID"])
     if date_range:
-        loader_args["date"] = date_range["Date_start"]
+        loader_args["date"] = date_range["start"]
 
     key_stats = key_statistics(**loader_args)
     data = load_statistics(**loader_args)

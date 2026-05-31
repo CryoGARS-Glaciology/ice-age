@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 from ibis import _
 from ibis import selectors as s
+from shapely.geometry import LineString
 
 from database import LOCATIONS_TABLE, MELT_RATES_TABLE, SHAPE_TABLE
 from modules import DATE_FORMAT
@@ -77,7 +78,12 @@ def map_data(site_select: dict, date_select: dict = None) -> gpd.GeoDataFrame:
             db_table(SHAPE_TABLE).Date.isin([date_select["start"], date_select["end"]])
         )
 
+    # Find matching early and late observations
     window = ibis.window(group_by=[_.IcebergID, _.filename], order_by=_.Date)
+    # For calculating distances
+    early_centroid = _.geom.centroid()
+    late_centroid = early_centroid.lead(1).over(window)
+
     shape_query = (
         db_table(SHAPE_TABLE)
         .filter(user_selection)
@@ -85,7 +91,32 @@ def map_data(site_select: dict, date_select: dict = None) -> gpd.GeoDataFrame:
             ~s.cols("Date", "filename"),
             date_rank=ibis.row_number().over(window),
             observed_date=db_table(SHAPE_TABLE).Date.strftime(DATE_FORMAT),
+            early_centroid_geom=early_centroid,
+            late_centroid_geom=late_centroid,
+            distance_meters=early_centroid.distance(late_centroid).round(0),
         )
     )
 
     return shape_query.to_pandas().set_crs("EPSG:3413")
+
+def shape_distances(data: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """
+    Calculate the distance between the early and late centroids for each shape.
+
+    :param data: GeoDataFrame with shape data
+
+    :return:
+        GeoDataFrame with distance between early and late centroids
+    """
+    site_lines = data[data["date_rank"] == 0]
+    line_geometries = [
+        LineString([(early.x, early.y), (late.x, late.y)])
+        for early, late in zip(
+            site_lines["early_centroid_geom"], site_lines["late_centroid_geom"]
+        )
+    ]
+    return gpd.GeoDataFrame(
+        site_lines[["IcebergID", "distance_meters"]],
+        geometry=line_geometries,
+        crs="EPSG:3413",
+    ).to_crs(epsg=4326)

@@ -6,7 +6,7 @@ from shapely.geometry import box
 from streamlit_folium import st_folium
 
 from modules.map_backgrounds import MAP_BACKGROUNDS
-from modules.shape_viewer import locations_with_shape
+from modules.shape_viewer import locations_with_shape, shape_distances
 
 
 def map_overlay_css():
@@ -204,6 +204,7 @@ def iceberg_map(iceberg_sites: gpd.GeoDataFrame) -> folium.Map:
     :return:
         Folium map object
     """
+    site_lines = shape_distances(iceberg_sites)
     iceberg_sites.to_crs("EPSG:4326", inplace=True)
 
     map_center = box(*iceberg_sites.total_bounds).centroid
@@ -211,25 +212,46 @@ def iceberg_map(iceberg_sites: gpd.GeoDataFrame) -> folium.Map:
         location=[map_center.y, map_center.x], zoom_start=11, tiles="CartoDB positron"
     )
 
-    tooltip = folium.GeoJsonTooltip(
-        fields=["observed_date", "IcebergID"],
-        aliases=["Date", "Iceberg ID"],
+    tooltip_opts = dict(
         localize=True,
         sticky=False,
         labels=True,
         style="""
-            background-color: #F0EFEF;
-            border: 2px solid black;
-            border-radius: 3px;
-            box-shadow: 3px;
-        """,
+        background-color: #F0EFEF;
+        border: 2px solid black;
+        border-radius: 3px;
+        box-shadow: 3px;
+    """,
     )
 
+    # Shapes
+    render_columns = ["IcebergID", "observed_date", "geom", "date_rank"]
     shape_colors = unique_colors(iceberg_sites)
+
     folium.GeoJson(
-        iceberg_sites,
+        iceberg_sites[render_columns],
         style_function=lambda x: shape_color(x, shape_colors),
-        tooltip=tooltip,
+        tooltip=folium.GeoJsonTooltip(
+            fields=["observed_date", "IcebergID"],
+            aliases=["Date", "Iceberg ID"],
+            **tooltip_opts,
+        ),
+    ).add_to(map_element)
+
+    # Lines
+    folium.GeoJson(
+        site_lines,
+        style_function=lambda x: {
+            "stroke": True,
+            "color": shape_colors.get(x["properties"]["IcebergID"], "#808080"),
+            "weight": 2,
+            "opacity": 1.0,
+        },
+        tooltip=folium.GeoJsonTooltip(
+            fields=["distance_meters"],
+            aliases=["Distance (m):"],
+            **tooltip_opts,
+        ),
     ).add_to(map_element)
 
     return map_element

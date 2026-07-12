@@ -6,25 +6,30 @@ import streamlit as st
 from database import DB_PATH
 
 
-@st.cache_resource
 def db_exists():
     return Path(DB_PATH).exists()
 
 
 @st.cache_resource
+def connect_to_db():
+    return ibis.duckdb.connect(DB_PATH, read_only=True, extensions=["spatial"])
+
+
 def get_connection():
+    """
+    Wrapper to ensure only a successful connection is cached
+    """
     if db_exists():
-        return ibis.duckdb.connect(DB_PATH, read_only=True, extensions=["spatial"])
+        return connect_to_db()
     else:
         return None
 
 
-@st.cache_resource
 def db_table(table):
-    if db_exists():
-        return get_connection().table(table)
+    if get_connection() is None:
+        raise Exception("Database not connected")
     else:
-        return None
+        return get_connection().table(table)
 
 
 def clear_db_cache() -> None:
@@ -32,6 +37,4 @@ def clear_db_cache() -> None:
     Clear all cached database connection info and tables.
     This is used when creating or reimporting the database.
     """
-    db_exists.clear()
-    db_table.clear()
     get_connection.clear()

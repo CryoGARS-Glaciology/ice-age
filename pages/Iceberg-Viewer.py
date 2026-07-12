@@ -1,4 +1,6 @@
+import folium
 import streamlit as st
+from shapely.geometry import box
 from streamlit_folium import st_folium
 
 from database import MELT_RATES_TABLE, SHAPE_TABLE
@@ -43,6 +45,18 @@ if site_select:
     st.header("Map")
 
     glacier_sites = map_data(site_select, date_range)
-    map_object = iceberg_map(glacier_sites)
+    features, iceberg_sites = iceberg_map(glacier_sites)
 
-    st_folium(map_object, use_container_width=True, returned_objects=None)
+    map_center = box(*iceberg_sites.total_bounds).centroid
+    map_element = folium.Map(
+        location=[0.0, 0.0], zoom_start=11, tiles="CartoDB positron"
+    )
+
+    st_folium(
+        map_element,
+        feature_group_to_add=features,
+        center=(map_center.y, map_center.x),
+        use_container_width=True,
+        returned_objects=None,
+        key="Iceberg-Viewer-Map",
+    )

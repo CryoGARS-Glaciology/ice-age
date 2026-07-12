@@ -2,7 +2,6 @@ import colorcet as cc
 import folium
 import geopandas as gpd
 import streamlit as st
-from shapely.geometry import box
 from streamlit_folium import st_folium
 
 from modules.map_backgrounds import MAP_BACKGROUNDS
@@ -195,22 +194,21 @@ def unique_colors(iceberg_sites: gpd.GeoDataFrame) -> dict:
     return {ice_id: palette[index] for index, ice_id in enumerate(iceberg_ids)}
 
 
-def iceberg_map(iceberg_sites: gpd.GeoDataFrame) -> folium.Map:
+def iceberg_map(
+    iceberg_sites: gpd.GeoDataFrame,
+) -> tuple[folium.FeatureGroup, gpd.GeoDataFrame]:
     """
-    Create map with iceberg shapes.
+    Create map feature group with iceberg shapes to add to the map.
 
     :param iceberg_sites: GeoDataFrame with icebergs to show in the map
 
     :return:
-        Folium map object
+        Folium map object, Updated iceberg sites DataFrame
     """
+    feature_group = folium.FeatureGroup(name="Iceberg Shapes")
+
     site_lines = shape_distances(iceberg_sites)
     iceberg_sites.to_crs("EPSG:4326", inplace=True)
-
-    map_center = box(*iceberg_sites.total_bounds).centroid
-    map_element = folium.Map(
-        location=[map_center.y, map_center.x], zoom_start=11, tiles="CartoDB positron"
-    )
 
     tooltip_opts = dict(
         localize=True,
@@ -236,7 +234,7 @@ def iceberg_map(iceberg_sites: gpd.GeoDataFrame) -> folium.Map:
             aliases=["Date", "Iceberg ID"],
             **tooltip_opts,
         ),
-    ).add_to(map_element)
+    ).add_to(feature_group)
 
     # Lines
     folium.GeoJson(
@@ -252,6 +250,6 @@ def iceberg_map(iceberg_sites: gpd.GeoDataFrame) -> folium.Map:
             aliases=["Distance (m):"],
             **tooltip_opts,
         ),
-    ).add_to(map_element)
+    ).add_to(feature_group)
 
-    return map_element
+    return feature_group, iceberg_sites

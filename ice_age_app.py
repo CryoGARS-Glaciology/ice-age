@@ -40,4 +40,7 @@ pg = st.navigation(
     }
 )
 
+# Clear data previous app runs
+st.cache_data.clear()
+
 pg.run()

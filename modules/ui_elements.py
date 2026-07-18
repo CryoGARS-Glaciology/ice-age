@@ -74,12 +74,12 @@ def date_range_selector(date_ranges: pd.DataFrame, selected_date_range=None):
     :return:
         Streamlit select UI object
     """
-    if selected_date_range:
+    index = None
+    if selected_date_range and "_" in selected_date_range:
         start_date, _end_date = selected_date_range.split("_")
-        index = date_ranges[date_ranges.start == start_date]["start"].idxmax()
-        index = int(index)  # Streamlit needs an int and not int64
-    else:
-        index = None
+        if start_date in date_ranges.start_date.values:
+            index = date_ranges[date_ranges.start == start_date]["start"].idxmax()
+            index = int(index)  # Streamlit needs an int and not int64
 
     return st.selectbox(
         "Observation Periods (start - end):",

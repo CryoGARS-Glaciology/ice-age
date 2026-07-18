@@ -18,7 +18,7 @@ from modules.ui_elements import (
 selected_site, selected_dates = site_and_date_query_params()
 
 with open("pages/statistics.css", "r") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    st.html(f"<style>{f.read()}</style>")
 
 st.title("📊 Iceberg Statistics Dashboard")
 

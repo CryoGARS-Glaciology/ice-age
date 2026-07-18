@@ -17,7 +17,7 @@ from modules.ui_elements import (
 
 selected_site, selected_dates = site_and_date_query_params()
 
-st.title("Iceberg Viewer")
+st.title("🔍 Iceberg Viewer")
 
 with st.container():
     col1, col2 = st.columns(2, vertical_alignment="bottom")

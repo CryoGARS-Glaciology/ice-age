@@ -4,7 +4,6 @@ from shapely.geometry import box
 from streamlit_folium import st_folium
 
 from database import MELT_RATES_TABLE, SHAPE_TABLE
-from modules.database import db_table
 from modules.plotting import iceberg_map
 from modules.shape_viewer import map_data, shape_dates_for_site
 from modules.ui_elements import (
@@ -34,7 +33,7 @@ with st.container():
     menu_col_1, menu_col_2 = st.columns(2)
 
 with menu_col_1:
-    site_select = site_name_selector(db_table(SHAPE_TABLE), selected_site)
+    site_select = site_name_selector(SHAPE_TABLE, selected_site)
 
 if site_select:
     with menu_col_2:

@@ -46,7 +46,8 @@ two parts to complete this process:
 ### Downloading the required data
 
 The required data that powers this application is not included in this repository.
-To download the data, go to: TBD
+To download the data, go to:
+[ice-age_app_catalog-data.zip](https://drive.google.com/file/d/1d-Am__IgiIqlATwYyJXlJpQKYhfr2nFn/view)
 
 ### Starting the application
 

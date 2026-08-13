@@ -26,7 +26,7 @@ st.html(
 )
 
 # Titles and content
-st.title("🥳 Acknowledgements:")
+st.title("Acknowledgements")
 st.info(
     "Project funding via NSF Arctic Natural Sciences awards #2052561, #2052549, #205255"
 )
@@ -43,7 +43,7 @@ st.html(
     """
 )
 
-st.title("🔮 The Future of ICE-AGE:")
+st.title("The Future of ICE-AGE")
 st.html(
     """
     <div class="card">
@@ -60,25 +60,25 @@ st.markdown(
     "[ICEBERGER: Interactive Tool for Iceberg Research](https://joshdata.me/iceberger.html)"
 )
 st.markdown(
-    "[Zenodo Record - ICE-AGE Data](https://zenodo.org/records/8007035)"
+    "[Iceberg Melange Fragmentation Theory (code, Enderlin et al.)]"
+    "(https://zenodo.org/records/8007035)"
+)
+
+st.header("References", divider=True)
+st.markdown(
+    "- Enderlin, E. M., Liu, J., and Kopera, M. (2023). "
+    "ellynenderlin/melange-fragmentation-theory: v0.1.2. Zenodo. "
+    "[https://doi.org/10.5281/zenodo.8007035](https://doi.org/10.5281/zenodo.8007035)"
 )
 
 # Sidebar with images aligned side by side
 col1, col2 = st.sidebar.columns(2)
 
 # Image for NSIDC on the left column
-col1.image(
-    "catalog-data/images/NSIDC.png",
-    use_container_width=True,
-    width=240
-)
+col1.image("catalog-data/images/NSIDC.png", width=200)
 
 # Image for NSF on the right column
-col2.image(
-    "catalog-data/images/NSF.png",
-    use_container_width=True,
-    width=250
-)
+col2.image("catalog-data/images/NSF.png", width=200)
 
 # Existing sidebar images
 st.sidebar.image(

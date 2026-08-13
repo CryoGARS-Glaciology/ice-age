@@ -32,6 +32,13 @@ def clear_db_cache() -> None:
     Clear all cached database connection info and tables.
     This is used when creating or reimporting the database.
     """
+    # Imported lazily to avoid a circular import (both modules import this one).
+    from modules.melt_rates import melt_rate_observations, observation_month_range
+    from modules.shape_viewer import map_data
+
     db_exists.clear()
     db_table.clear()
     get_connection.clear()
+    map_data.clear()
+    melt_rate_observations.clear()
+    observation_month_range.clear()

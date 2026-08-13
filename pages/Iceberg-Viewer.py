@@ -41,8 +41,15 @@ if site_select:
 
 if site_select:
     st.header("Map")
+    st.caption(
+        "Lines connect an iceberg's repeat observations only within a single "
+        "imagery campaign. Iceberg ID numbers are reused across different "
+        "campaigns/years for unrelated icebergs, so observations from "
+        "different campaigns are never connected, even if shown in the same "
+        "color."
+    )
 
     glacier_sites = map_data(site_select, date_range)
     map_object = iceberg_map(glacier_sites)
 
-    st_folium(map_object, use_container_width=True, returned_objects=None)
+    st_folium(map_object, use_container_width=True, height=480, returned_objects=None)

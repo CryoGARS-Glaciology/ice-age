@@ -1,5 +1,7 @@
 import streamlit as st
 
+from modules.styling import centered_image
+
 IMAGES = [
     "catalog-data/images/Ice-bridge.png",
     "catalog-data/images/Icebergs.png",
@@ -38,6 +40,7 @@ CAPTIONS = [
     ),
 ]
 
-st.image(
-    image=IMAGES, caption=CAPTIONS, use_container_width=True
-)
+st.title("Image Gallery")
+
+for image, caption in zip(IMAGES, CAPTIONS):
+    centered_image(image, caption=caption)

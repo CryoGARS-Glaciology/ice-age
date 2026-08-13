@@ -31,11 +31,11 @@ st.markdown(
 st.header("Steps", divider=True)
 st.markdown(
     """
-    ### 1. Download the data from [Zenodo](https://zenodo.org/)
-    
-    All data for this app is publicly available on Zenodo.
-    [LINK](https://)
-    
+    ### 1. Download the data
+
+    Download the catalog data archive:
+    [ice-age_app_catalog-data.zip](https://drive.google.com/file/d/1d-Am__IgiIqlATwYyJXlJpQKYhfr2nFn/view)
+
     ### 2. Create a folder inside the application repository
     
     On your local machine, go to the root location where you copied the repository from GitHub. 
@@ -81,7 +81,7 @@ if st.button("Populate DB", type="primary"):
 if db_exists():
     st.markdown(
         """   
-            ### 5. All Done!
+            ### 5. All done!
             
             You are now ready to explore the data. The side navigation bar now has additional
             entries under the __"Data"__ category. The homepage will now show the overview 

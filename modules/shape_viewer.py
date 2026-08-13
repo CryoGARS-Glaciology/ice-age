@@ -8,7 +8,7 @@ from shapely.geometry import LineString
 
 from database import LOCATIONS_TABLE, MELT_RATES_TABLE, SHAPE_TABLE
 from modules import DATE_FORMAT
-from modules.database import db_table
+from modules.database import db_table, execute_query
 
 
 def locations_with_shape() -> pd.DataFrame:
@@ -19,19 +19,12 @@ def locations_with_shape() -> pd.DataFrame:
     :return:
         DataFrame with locations and shape availability
     """
-    return (
-        db_table(LOCATIONS_TABLE)
-        .mutate(
-            has_shapes=db_table(LOCATIONS_TABLE).Glacier_ID.isin(
-                db_table(SHAPE_TABLE).SiteID
-            ),
-            has_statistics=db_table(LOCATIONS_TABLE).Glacier_ID.isin(
-                db_table(MELT_RATES_TABLE).SiteID
-            ),
-        )
-        .execute()
+    expression = db_table(LOCATIONS_TABLE).mutate(
+        has_shapes=_.Glacier_ID.isin(db_table(SHAPE_TABLE).SiteID),
+        has_statistics=_.Glacier_ID.isin(db_table(MELT_RATES_TABLE).SiteID),
     )
 
+    return execute_query(expression)
 
 def shape_dates_for_site(site_id: str) -> pd.DataFrame:
     """
@@ -42,14 +35,11 @@ def shape_dates_for_site(site_id: str) -> pd.DataFrame:
     :return:
         Dataframe with start and end dates
     """
-    return (
+    expression = (
         db_table(SHAPE_TABLE)
-        .filter(db_table(SHAPE_TABLE).SiteID == site_id)
-        .group_by(db_table(SHAPE_TABLE).IcebergID, db_table(SHAPE_TABLE).filename)
-        .aggregate(
-            start=db_table(SHAPE_TABLE).Date.min(),
-            end=db_table(SHAPE_TABLE).Date.max(),
-        )
+        .filter(_.SiteID == site_id)
+        .group_by(_.IcebergID, _.filename)
+        .aggregate(start=_.Date.min(), end=_.Date.max())
         .select("start", "end")
         .mutate(
             start_date=_.start.strftime(DATE_FORMAT),
@@ -57,7 +47,9 @@ def shape_dates_for_site(site_id: str) -> pd.DataFrame:
         )
         .order_by("start")
         .distinct()
-    ).execute()
+    )
+
+    return execute_query(expression)
 
 
 @st.cache_data
@@ -72,10 +64,11 @@ def map_data(site_select: dict, date_select: dict = None) -> gpd.GeoDataFrame:
     :return:
         GeoDataFrame with all shapes for the given site and date range
     """
-    user_selection = [db_table(SHAPE_TABLE).SiteID == site_select["Glacier_ID"]]
+    table = db_table(SHAPE_TABLE)
+    user_selection = [table.SiteID == site_select["Glacier_ID"]]
     if date_select:
         user_selection.append(
-            db_table(SHAPE_TABLE).Date.isin([date_select["start"], date_select["end"]])
+            table.Date.isin([date_select["start"], date_select["end"]])
         )
 
     # Find matching early and late observations
@@ -84,20 +77,15 @@ def map_data(site_select: dict, date_select: dict = None) -> gpd.GeoDataFrame:
     early_centroid = _.geom.centroid()
     late_centroid = early_centroid.lead(1).over(window)
 
-    shape_query = (
-        db_table(SHAPE_TABLE)
-        .filter(user_selection)
-        .select(
-            ~s.cols("Date", "filename"),
-            date_rank=ibis.row_number().over(window),
-            observed_date=db_table(SHAPE_TABLE).Date.strftime(DATE_FORMAT),
-            early_centroid_geom=early_centroid,
-            late_centroid_geom=late_centroid,
-            distance_meters=early_centroid.distance(late_centroid).round(0),
-        )
+    expression = table.filter(user_selection).select(
+        ~s.cols("Date", "filename"),
+        date_rank=ibis.row_number().over(window),
+        observed_date=_.Date.strftime(DATE_FORMAT),
+        early_centroid_geom=early_centroid,
+        late_centroid_geom=late_centroid,
+        distance_meters=early_centroid.distance(late_centroid).round(0),
     )
-
-    return shape_query.to_pandas().set_crs("EPSG:3413")
+    return execute_query(expression).set_crs("EPSG:3413")
 
 def shape_distances(data: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """

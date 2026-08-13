@@ -5,7 +5,7 @@ from ibis.expr.types import Table
 
 from database import MELT_RATES_TABLE
 from modules import DATE_FORMAT
-from modules.database import db_table
+from modules.database import db_table, execute_query
 
 
 def statistic_dates_for_site(site_name: str) -> pd.DataFrame:
@@ -17,20 +17,14 @@ def statistic_dates_for_site(site_name: str) -> pd.DataFrame:
     :return:
         Dataframe with raw (for filtering) and formatted (for labels) dates
     """
-    return (
-        db_table(MELT_RATES_TABLE)
-        .filter(_.SiteID == site_name)
-        .select(
-            start=_.Date_start,
-            end=_.Date_end
-        )
+    expression = db_table(MELT_RATES_TABLE).filter(_.SiteID == site_name) \
+        .select(start=_.Date_start, end=_.Date_end ) \
         .mutate(
             start_date=_.start.strftime(DATE_FORMAT),
             end_date=_.end.strftime(DATE_FORMAT),
-        )
-        .distinct()
-        .order_by(ibis.asc(_.start))
-    ).execute()
+        ).distinct().order_by(ibis.asc(_.start))
+
+    return execute_query(expression)
 
 
 def filter_site(site_name: str, date: str = None) -> Table:
@@ -43,11 +37,10 @@ def filter_site(site_name: str, date: str = None) -> Table:
     :return:
         Ibis table that can be fetched or further filtered
     """
-    query = db_table(MELT_RATES_TABLE).filter(
-        db_table(MELT_RATES_TABLE).SiteID == site_name
-    )
+    table = db_table(MELT_RATES_TABLE)
+    query = table.filter(_.SiteID == site_name)
     if date:
-        query = query.filter(db_table(MELT_RATES_TABLE).Date_start == date)
+        query = query.filter(_.Date_start == date)
 
     return query
 
@@ -72,13 +65,10 @@ def key_statistics(site_name: str, date: str = None) -> pd.DataFrame:
         Dataframe with results.
     """
     table = filter_site(site_name, date).mutate(
-        date_difference=db_table(MELT_RATES_TABLE).Date_end.delta(
-            db_table(MELT_RATES_TABLE).Date_start, unit="days"
-        )
+        date_difference=_.Date_end.delta(_.Date_start, unit="days")
     )
 
-    return (
-        table.group_by(db_table(MELT_RATES_TABLE).Date_start)
+    expression = table.group_by(table.Date_start) \
         .aggregate(
             [
                 table.date_difference.mean().cast("int").name("Number of Days"),
@@ -88,15 +78,13 @@ def key_statistics(site_name: str, date: str = None) -> pd.DataFrame:
                 table.Melt_Rate.mean().name("Melt Rate (m/day)"),
                 table.Melt_Rate_uncertainty.mean().name("Melt Rate Uncertainty"),
             ]
-        )
-        .mutate(
+        ).mutate(
             **{
-                "Observation Start": db_table(MELT_RATES_TABLE).Date_start.strftime(
-                    DATE_FORMAT
-                ),
+                "Observation Start": _.Date_start.strftime(DATE_FORMAT),
             }
         )
-    ).execute()
+
+    return execute_query(expression)
 
 
 def key_statistics_chart_data(site_name: str, date: str = None) -> pd.DataFrame:
@@ -110,24 +98,18 @@ def key_statistics_chart_data(site_name: str, date: str = None) -> pd.DataFrame:
     :return:
         Dataframe with results.
     """
-    return (
-        filter_site(site_name, date).select(
+    expression = filter_site(site_name, date).select(
             [
-                db_table(MELT_RATES_TABLE).Date_start.name("Observation Start"),
-                db_table(MELT_RATES_TABLE).Surface_Area_mean.round(2).name(
-                    "Surface Area Mean (m^2)"
-                ),
-                db_table(MELT_RATES_TABLE).Draft_mean.round(2).name("Draft Mean (m)"),
-                db_table(MELT_RATES_TABLE).dVdt_mean.round(2).name(
-                    "Volume change (m^3/day)"
-                ),
-                db_table(MELT_RATES_TABLE).Melt_Rate.name("Melt Rate (m/day)"),
-                db_table(MELT_RATES_TABLE).Melt_Rate_uncertainty.name(
-                    "Melt Rate Uncertainty"
-                ),
+                _.Date_start.name("Observation Start"),
+                _.Surface_Area_mean.round(2).name("Surface Area Mean (m^2)"),
+                _.Draft_mean.round(2).name("Draft Mean (m)"),
+                _.dVdt_mean.round(2).name("Volume change (m^3/day)"),
+                _.Melt_Rate.name("Melt Rate (m/day)"),
+                _.Melt_Rate_uncertainty.name("Melt Rate Uncertainty"),
             ]
         )
-    ).execute()
+
+    return execute_query(expression)
 
 
 def load_statistics(site_name: str, date: str = None) -> pd.DataFrame:
@@ -141,4 +123,4 @@ def load_statistics(site_name: str, date: str = None) -> pd.DataFrame:
     :return:
         DataFrame with raw csv data
     """
-    return filter_site(site_name, date).execute()
+    return execute_query(filter_site(site_name, date))

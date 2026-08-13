@@ -2,10 +2,9 @@ import ibis
 import pandas as pd
 import streamlit as st
 from ibis import _
-from ibis.expr.types import Table
 
 from database import LOCATIONS_TABLE
-from modules.database import db_table
+from modules.database import db_table, execute_query
 
 GLACIER_ID_KEY = db_table(LOCATIONS_TABLE).Glacier_ID.get_name()
 
@@ -22,7 +21,7 @@ def site_and_date_query_params():
     return selected_site, selected_dates
 
 
-def site_name_selector(join_table: Table, selected_site=None):
+def site_name_selector(join_table: str, selected_site=None):
     """
     Create a dropdown menu with all available glacier site names.
     Optionally set the selected site for the dropdown.
@@ -74,12 +73,12 @@ def date_range_selector(date_ranges: pd.DataFrame, selected_date_range=None):
     :return:
         Streamlit select UI object
     """
-    if selected_date_range:
+    index = None
+    if selected_date_range and "_" in selected_date_range:
         start_date, _end_date = selected_date_range.split("_")
-        index = date_ranges[date_ranges.start == start_date]["start"].idxmax()
-        index = int(index)  # Streamlit needs an int and not int64
-    else:
-        index = None
+        if start_date in date_ranges.start_date.values:
+            index = date_ranges[date_ranges.start == start_date]["start"].idxmax()
+            index = int(index)  # Streamlit needs an int and not int64
 
     return st.selectbox(
         "Observation Periods (start - end):",
@@ -118,18 +117,15 @@ def load_site_names(join_table) -> pd.DataFrame:
     :return:
         Dataframe with 'Glacier_ID' for filtering and a 'label' for dropdown label.
     """
-    return (
-        db_table(LOCATIONS_TABLE)
-        .join(join_table, db_table(LOCATIONS_TABLE).Glacier_ID == join_table.SiteID)
-        .select(
-            [
-                db_table(LOCATIONS_TABLE).Official_name.name("label"),
-                db_table(LOCATIONS_TABLE).Glacier_ID,
-            ]
-        )
+    table = db_table(LOCATIONS_TABLE)
+    join_table = db_table(join_table)
+    expression = (
+        table.join(join_table, table.Glacier_ID == join_table.SiteID)
+        .select([table.Official_name.name("label"), table.Glacier_ID])
         .distinct()
-        .order_by(ibis.asc(db_table(LOCATIONS_TABLE).Glacier_ID))
-    ).execute()
+        .order_by(ibis.asc(table.Glacier_ID))
+    )
+    return execute_query(expression)
 
 
 def _button_query_params(site: str, selected_date: str | None) -> dict:
@@ -199,4 +195,5 @@ def has_records(table: str, site_name: str) -> bool:
     :return:
         True if records exist, False otherwise.
     """
-    return len(db_table(table).filter(_.SiteID == site_name).head(1).execute()) > 0
+    query_result = execute_query(db_table(table).filter(_.SiteID == site_name).head(1))
+    return len(query_result) > 0

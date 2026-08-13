@@ -2,10 +2,9 @@ import ibis
 import pandas as pd
 import streamlit as st
 from ibis import _
-from ibis.expr.types import Table
 
 from database import LOCATIONS_TABLE
-from modules.database import db_table
+from modules.database import db_table, execute_query
 
 GLACIER_ID_KEY = "Glacier_ID"
 
@@ -22,7 +21,7 @@ def site_and_date_query_params():
     return selected_site, selected_dates
 
 
-def site_name_selector(join_table: Table, selected_site=None):
+def site_name_selector(join_table: str, selected_site=None):
     """
     Create a dropdown menu with all available glacier site names.
     Optionally set the selected site for the dropdown.
@@ -76,16 +75,20 @@ def date_range_selector(date_ranges: pd.DataFrame, selected_date_range=None):
     :return:
         Streamlit select UI object
     """
-    if selected_date_range:
+    index = None
+    # The "_" guard rejects a malformed date_range query parameter before the
+    # split, rather than raising on it.
+    if selected_date_range and "_" in selected_date_range:
         # Match against the stable url_start column (not the raw `start`
         # date, and not the display-formatted start_date, both of which are
         # sensitive to DATE_FORMAT/type coercion) so pre-selection from a
         # URL/deep-link is independent of the display date format.
         url_start, _url_end = selected_date_range.split("_")
         matches = date_ranges[date_ranges.url_start == url_start]
-        index = int(matches["start"].idxmax()) if len(matches) else None
-    else:
-        index = None
+        # A URL may name a period this site does not have; fall through to the
+        # default rather than indexing into an empty result.
+        if len(matches):
+            index = int(matches["start"].idxmax())  # Streamlit needs int, not int64
 
     if index is None:
         # Default to the first available observation period so the page
@@ -129,18 +132,15 @@ def load_site_names(join_table) -> pd.DataFrame:
     :return:
         Dataframe with 'Glacier_ID' for filtering and a 'label' for dropdown label.
     """
-    return (
-        db_table(LOCATIONS_TABLE)
-        .join(join_table, db_table(LOCATIONS_TABLE).Glacier_ID == join_table.SiteID)
-        .select(
-            [
-                db_table(LOCATIONS_TABLE).Official_name.name("label"),
-                db_table(LOCATIONS_TABLE).Glacier_ID,
-            ]
-        )
+    table = db_table(LOCATIONS_TABLE)
+    join_table = db_table(join_table)
+    expression = (
+        table.join(join_table, table.Glacier_ID == join_table.SiteID)
+        .select([table.Official_name.name("label"), table.Glacier_ID])
         .distinct()
-        .order_by(ibis.asc(db_table(LOCATIONS_TABLE).Glacier_ID))
-    ).execute()
+        .order_by(ibis.asc(table.Glacier_ID))
+    )
+    return execute_query(expression)
 
 
 def _button_query_params(site: str, selected_date: str | None) -> dict:
@@ -210,4 +210,5 @@ def has_records(table: str, site_name: str) -> bool:
     :return:
         True if records exist, False otherwise.
     """
-    return len(db_table(table).filter(_.SiteID == site_name).head(1).execute()) > 0
+    query_result = execute_query(db_table(table).filter(_.SiteID == site_name).head(1))
+    return len(query_result) > 0

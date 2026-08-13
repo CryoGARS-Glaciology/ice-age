@@ -4,7 +4,7 @@ import streamlit as st
 from ibis import _
 
 from database import LOCATIONS_TABLE, MELT_RATES_TABLE
-from modules.database import db_table
+from modules.database import db_table, execute_query
 
 # Column labels shared by the charts, the raw-data table and the CSV export, so
 # the units a reader sees on an axis are the same strings they get in the
@@ -74,7 +74,9 @@ def melt_rate_observations(site_ids: tuple[str, ...] | None = None) -> pd.DataFr
     if site_ids:
         query = query.filter(_.site_id.isin(list(site_ids)))
 
-    observations = query.order_by([ibis.asc(_.site_id), ibis.asc(_.start)]).execute()
+    observations = execute_query(
+        query.order_by([ibis.asc(_.site_id), ibis.asc(_.start)])
+    )
     # Month of the observation window's start, for seasonality encoding. Kept
     # out of the SQL projection because it is a display concern rather than a
     # stored measure, and it never reaches the CSV export (see raw_data_table).
@@ -94,13 +96,11 @@ def observation_month_range() -> tuple[int, int]:
     :return:
         ``(first_month, last_month)`` as 1-12 integers.
     """
-    months = (
-        db_table(MELT_RATES_TABLE)
-        .aggregate(
+    months = execute_query(
+        db_table(MELT_RATES_TABLE).aggregate(
             first=_.Date_start.month().min(),
             last=_.Date_start.month().max(),
         )
-        .execute()
     )
     return int(months["first"].iloc[0]), int(months["last"].iloc[0])
 

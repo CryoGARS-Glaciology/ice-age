@@ -6,7 +6,10 @@ from modules.database import clear_db_cache, db_exists, get_connection
 
 def create_db():
     if db_exists():
-        get_connection().disconnect()
+        # get_connection returns (connection, lock); only the connection can be
+        # disconnected.
+        connection, _lock = get_connection()
+        connection.disconnect()
 
     clear_db_cache()
 

@@ -2,7 +2,6 @@ import altair as alt
 import streamlit as st
 
 from database import MELT_RATES_TABLE, SHAPE_TABLE
-from modules.database import db_table
 from modules.statistics import key_statistics, load_statistics, statistic_dates_for_site
 from modules.ui_elements import (
     date_range_selector,
@@ -15,7 +14,7 @@ from modules.ui_elements import (
 selected_site, selected_dates = site_and_date_query_params()
 
 with open("pages/statistics.css", "r") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    st.html(f"<style>{f.read()}</style>")
 
 st.title("Iceberg Statistics Dashboard")
 
@@ -32,7 +31,7 @@ with st.container():
     menu_col1, menu_col2 = st.columns(2)
 
 with menu_col1:
-    site_name = site_name_selector(db_table(MELT_RATES_TABLE), selected_site)
+    site_name = site_name_selector(MELT_RATES_TABLE, selected_site)
 
 date_range = None
 

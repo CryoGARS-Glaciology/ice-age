@@ -5,7 +5,7 @@ from ibis.expr.types import Table
 
 from database import MELT_RATES_TABLE
 from modules import DATE_FORMAT, URL_DATE_FORMAT
-from modules.database import db_table
+from modules.database import db_table, execute_query
 
 
 def statistic_dates_for_site(site_name: str) -> pd.DataFrame:
@@ -17,22 +17,19 @@ def statistic_dates_for_site(site_name: str) -> pd.DataFrame:
     :return:
         Dataframe with raw (for filtering) and formatted (for labels) dates
     """
-    return (
-        db_table(MELT_RATES_TABLE)
-        .filter(_.SiteID == site_name)
-        .select(
-            start=_.Date_start,
-            end=_.Date_end
-        )
+    expression = db_table(MELT_RATES_TABLE).filter(_.SiteID == site_name) \
+        .select(start=_.Date_start, end=_.Date_end ) \
         .mutate(
             start_date=_.start.strftime(DATE_FORMAT),
             end_date=_.end.strftime(DATE_FORMAT),
+            # Display strings follow DATE_FORMAT and may be re-styled at any
+            # time; the url_* pair stays in URL_DATE_FORMAT so deep links keep
+            # working when the display format changes.
             url_start=_.start.strftime(URL_DATE_FORMAT),
             url_end=_.end.strftime(URL_DATE_FORMAT),
-        )
-        .distinct()
-        .order_by(ibis.asc(_.start))
-    ).execute()
+        ).distinct().order_by(ibis.asc(_.start))
+
+    return execute_query(expression)
 
 
 def filter_site(site_name: str, date: str = None) -> Table:
@@ -45,11 +42,10 @@ def filter_site(site_name: str, date: str = None) -> Table:
     :return:
         Ibis table that can be fetched or further filtered
     """
-    query = db_table(MELT_RATES_TABLE).filter(
-        db_table(MELT_RATES_TABLE).SiteID == site_name
-    )
+    table = db_table(MELT_RATES_TABLE)
+    query = table.filter(_.SiteID == site_name)
     if date:
-        query = query.filter(db_table(MELT_RATES_TABLE).Date_start == date)
+        query = query.filter(_.Date_start == date)
 
     return query
 
@@ -74,13 +70,10 @@ def key_statistics(site_name: str, date: str = None) -> pd.DataFrame:
         Dataframe with results.
     """
     table = filter_site(site_name, date).mutate(
-        date_difference=db_table(MELT_RATES_TABLE).Date_end.delta(
-            db_table(MELT_RATES_TABLE).Date_start, unit="days"
-        )
+        date_difference=_.Date_end.delta(_.Date_start, unit="days")
     )
 
-    return (
-        table.group_by(db_table(MELT_RATES_TABLE).Date_start)
+    expression = table.group_by(table.Date_start) \
         .aggregate(
             [
                 table.date_difference.mean().cast("int").name("Number of Days"),
@@ -90,15 +83,13 @@ def key_statistics(site_name: str, date: str = None) -> pd.DataFrame:
                 table.Melt_Rate.mean().name("Melt Rate (m d⁻¹)"),
                 table.Melt_Rate_uncertainty.mean().name("Melt Rate Uncertainty"),
             ]
-        )
-        .mutate(
+        ).mutate(
             **{
-                "Observation Start": db_table(MELT_RATES_TABLE).Date_start.strftime(
-                    DATE_FORMAT
-                ),
+                "Observation Start": _.Date_start.strftime(DATE_FORMAT),
             }
         )
-    ).execute()
+
+    return execute_query(expression)
 
 
 def load_statistics(site_name: str, date: str = None) -> pd.DataFrame:
@@ -112,4 +103,4 @@ def load_statistics(site_name: str, date: str = None) -> pd.DataFrame:
     :return:
         DataFrame with raw csv data
     """
-    return filter_site(site_name, date).execute()
+    return execute_query(filter_site(site_name, date))

@@ -2,7 +2,6 @@ import altair as alt
 import streamlit as st
 
 from database import MELT_RATES_TABLE
-from modules.database import db_table
 from modules.melt_rates import (
     DRAFT_LABEL,
     MELT_RATE_LABEL,
@@ -70,7 +69,7 @@ st.markdown(
 
 st.header("Filter", divider=True)
 
-site_options = load_site_names(db_table(MELT_RATES_TABLE))
+site_options = load_site_names(MELT_RATES_TABLE)
 
 selected = st.multiselect(
     "Glacier systems:",

@@ -2,7 +2,7 @@ import colorcet as cc
 import folium
 import geopandas as gpd
 import streamlit as st
-from shapely.geometry import box
+from branca.element import MacroElement, Template
 from streamlit_folium import st_folium
 
 from modules.map_backgrounds import MAP_BACKGROUNDS
@@ -212,36 +212,101 @@ def unique_colors(iceberg_sites: gpd.GeoDataFrame) -> dict:
     return {key: palette[index] for index, key in enumerate(campaign_keys)}
 
 
-def iceberg_map(iceberg_sites: gpd.GeoDataFrame) -> folium.Map:
+# Hovering an iceberg highlights its connecting displacement line. The shapes
+# and lines are separate Leaflet layers, so this matches features between them
+# by (IcebergID, campaign filename) — IcebergID alone is reused across
+# unrelated campaigns — and restyles the matching line on mouseover/mouseout.
+#
+# The layers are reached through window.feature_group rather than by folium's
+# generated variable names: streamlit-folium re-renders a feature group passed
+# via feature_group_to_add through generate_leaflet_string(), which rewrites
+# those names, so anything captured at build time would not resolve. It pushes
+# the rendered group onto window.feature_group, which is the stable handle.
+#
+# Wrapped in a MacroElement rather than a plain folium.Element: streamlit-folium
+# rebuilds the map by collecting each child's Jinja `script` macro block, and
+# silently skips children that do not define one — a plain Element's JS is
+# dropped without warning.
+#
+# Attach with attach_highlight_script() after the map is built.
+HIGHLIGHT_SCRIPT = """
+{% macro script(this, kwargs) %}
+(function attachHighlight(attempt) {
+    attempt = attempt || 0;
+    var groups = window.feature_group;
+    // The group is injected after the map script runs, so poll for it rather
+    // than assuming order — and give up rather than spin forever.
+    if (!groups || !groups.length) {
+        if (attempt < 40) {
+            setTimeout(function() { attachHighlight(attempt + 1); }, 50);
+        }
+        return;
+    }
+    var sublayers = [];
+    groups[groups.length - 1].eachLayer(function(layer) { sublayers.push(layer); });
+    // Add order set in iceberg_map(): shapes, line casing, colored lines,
+    // arrowheads. The casing is skipped so only the colored line thickens.
+    var shapesLayer = sublayers[0];
+    var linesLayer = sublayers[2];
+    if (!shapesLayer || !linesLayer) { return; }
+
+    function key(props) { return props.IcebergID + "||" + props.filename; }
+    // Reset every line first, then (re-)apply the highlight for the hovered
+    // shape. This is deliberately not "just" reset-on-mouseout: fast pointer
+    // movement between adjacent features can skip a clean mouseout on the
+    // previously-hovered shape, leaving a stale highlight stuck on screen.
+    function resetLines() {
+        linesLayer.eachLayer(function(line) { line.setStyle({weight: 2.5}); });
+    }
+    shapesLayer.eachLayer(function(shape) {
+        var shapeKey = key(shape.feature.properties);
+        shape.on("mouseover", function() {
+            resetLines();
+            linesLayer.eachLayer(function(line) {
+                if (key(line.feature.properties) === shapeKey) {
+                    line.setStyle({weight: 6});
+                    line.bringToFront();
+                }
+            });
+        });
+        shape.on("mouseout", resetLines);
+    });
+})();
+{% endmacro %}
+"""
+
+
+def attach_highlight_script(map_element: folium.Map) -> None:
     """
-    Create map with iceberg shapes.
+    Attach the hover-to-highlight behaviour to a map that will receive the
+    iceberg feature group via st_folium's ``feature_group_to_add``.
+
+    :param map_element: Folium map the feature group will be added to
+    """
+    highlight = MacroElement()
+    highlight._template = Template(HIGHLIGHT_SCRIPT)
+    map_element.add_child(highlight)
+
+
+def iceberg_map(
+    iceberg_sites: gpd.GeoDataFrame,
+) -> tuple[folium.FeatureGroup, gpd.GeoDataFrame]:
+    """
+    Create map feature group with iceberg shapes to add to the map.
 
     :param iceberg_sites: GeoDataFrame with icebergs to show in the map
 
     :return:
-        Folium map object
+        Folium map object, Updated iceberg sites DataFrame
     """
+    # Layers are added below in a fixed order that HIGHLIGHT_SCRIPT depends on:
+    #   0 shapes, 1 line casing, 2 colored lines, 3 arrowheads.
+    # Keep that order in sync if layers are added or reordered.
+    feature_group = folium.FeatureGroup(name="Iceberg Shapes")
+
     site_lines = shape_distances(iceberg_sites)
     arrows = shape_arrowheads(iceberg_sites)
     iceberg_sites.to_crs("EPSG:4326", inplace=True)
-
-    map_center = box(*iceberg_sites.total_bounds).centroid
-    esri = MAP_BACKGROUNDS["ESRI"]
-    map_element = folium.Map(location=[map_center.y, map_center.x], tiles=None)
-    # Muted opacity on the satellite basemap so the iceberg overlays (added
-    # at full opacity below) read as the clear focal layer, not the imagery.
-    folium.TileLayer(
-        tiles=esri["tiles"], attr=esri["attribution"], opacity=0.6,
-    ).add_to(map_element)
-    # Dedicated pane above the default overlay pane so arrowheads always
-    # render on top of the iceberg polygons, regardless of layer add order.
-    folium.map.CustomPane("arrowheads", z_index=650).add_to(map_element)
-    # Fit to the actual extent of the icebergs being shown, rather than a
-    # fixed zoom level, so the view always bounds the available data
-    # (a fixed zoom either clips widely-scattered icebergs or leaves a
-    # tightly-clustered set zoomed out too far).
-    minx, miny, maxx, maxy = iceberg_sites.total_bounds
-    map_element.fit_bounds([[miny, minx], [maxy, maxx]])
 
     tooltip_opts = dict(
         localize=True,
@@ -264,7 +329,7 @@ def iceberg_map(iceberg_sites: gpd.GeoDataFrame) -> folium.Map:
     ]
     shape_colors = unique_colors(iceberg_sites)
 
-    shapes_layer = folium.GeoJson(
+    folium.GeoJson(
         iceberg_sites[render_columns],
         style_function=lambda x: shape_color(x, shape_colors),
         tooltip=folium.GeoJsonTooltip(
@@ -272,7 +337,7 @@ def iceberg_map(iceberg_sites: gpd.GeoDataFrame) -> folium.Map:
             aliases=["Date", "Iceberg ID", "Drift velocity to next observation"],
             **tooltip_opts,
         ),
-    ).add_to(map_element)
+    ).add_to(feature_group)
 
     # Lines: a wider black "casing" line drawn first, then the colored line
     # on top and slightly thinner, so every line reads as color-with-a-
@@ -280,7 +345,7 @@ def iceberg_map(iceberg_sites: gpd.GeoDataFrame) -> folium.Map:
     folium.GeoJson(
         site_lines,
         style_function=lambda x: {"stroke": True, "color": "black", "weight": 4, "opacity": 1.0},
-    ).add_to(map_element)
+    ).add_to(feature_group)
     line_color_style = lambda x: {
         "stroke": True,
         "color": shape_colors.get(
@@ -289,7 +354,7 @@ def iceberg_map(iceberg_sites: gpd.GeoDataFrame) -> folium.Map:
         "weight": 2.5,
         "opacity": 1.0,
     }
-    lines_layer = folium.GeoJson(
+    folium.GeoJson(
         site_lines,
         style_function=line_color_style,
         tooltip=folium.GeoJsonTooltip(
@@ -297,10 +362,13 @@ def iceberg_map(iceberg_sites: gpd.GeoDataFrame) -> folium.Map:
             aliases=["Distance (m):"],
             **tooltip_opts,
         ),
-    ).add_to(map_element)
+    ).add_to(feature_group)
 
     # Arrowheads at the end (late observation) of each line, so the
     # direction of travel is visible without relying on the tooltip.
+    # Rendered into the "arrowheads" pane, which the page creates on the map
+    # above the default overlay pane so arrows always sit on top of the
+    # polygons regardless of layer add order.
     folium.GeoJson(
         arrows,
         style_function=lambda x: {
@@ -313,45 +381,6 @@ def iceberg_map(iceberg_sites: gpd.GeoDataFrame) -> folium.Map:
             "fillOpacity": 1.0,
             "pane": "arrowheads",
         },
-    ).add_to(map_element)
+    ).add_to(feature_group)
 
-    # Hovering an iceberg highlights its connecting line: the shapes and
-    # lines are separate Leaflet layers, so this needs a small script to
-    # match features between them (by IcebergID + campaign filename, since
-    # IcebergID alone is reused across unrelated campaigns) and restyle the
-    # matching line on mouseover/mouseout.
-    highlight_js = f"""
-    (function() {{
-        var shapesLayer = {shapes_layer.get_name()};
-        var linesLayer = {lines_layer.get_name()};
-        function key(props) {{ return props.IcebergID + "||" + props.filename; }}
-        // Reset every line first, then (re-)apply the highlight for the
-        // hovered shape. This is deliberately not "just" reset-on-mouseout:
-        // fast/synthetic pointer movement between adjacent map features can
-        // skip a clean mouseout on the previously-hovered shape, which would
-        // otherwise leave a stale highlight stuck on screen.
-        function resetLines() {{
-            linesLayer.eachLayer(function(lineFeature) {{ lineFeature.setStyle({{weight: 2.5}}); }});
-        }}
-        shapesLayer.eachLayer(function(shapeFeature) {{
-            var shapeKey = key(shapeFeature.feature.properties);
-            shapeFeature.on("mouseover", function() {{
-                resetLines();
-                linesLayer.eachLayer(function(lineFeature) {{
-                    if (key(lineFeature.feature.properties) === shapeKey) {{
-                        lineFeature.setStyle({{weight: 6}});
-                        lineFeature.bringToFront();
-                    }}
-                }});
-            }});
-            shapeFeature.on("mouseout", resetLines);
-        }});
-    }})();
-    """
-    # Added to the `script` root element (not `html`): layer creation code
-    # for shapes_layer/lines_layer also lives there, in the order added, so
-    # this must be appended after them to reference already-defined
-    # variables rather than risk running before the map/layers exist.
-    map_element.get_root().script.add_child(folium.Element(highlight_js))
-
-    return map_element
+    return feature_group, iceberg_sites

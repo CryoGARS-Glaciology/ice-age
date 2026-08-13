@@ -10,7 +10,7 @@ from shapely.geometry import LineString, Polygon
 
 from database import LOCATIONS_TABLE, MELT_RATES_TABLE, SHAPE_TABLE
 from modules import DATE_FORMAT, URL_DATE_FORMAT
-from modules.database import db_table
+from modules.database import db_table, execute_query
 
 
 def locations_with_shape() -> pd.DataFrame:
@@ -21,19 +21,12 @@ def locations_with_shape() -> pd.DataFrame:
     :return:
         DataFrame with locations and shape availability
     """
-    return (
-        db_table(LOCATIONS_TABLE)
-        .mutate(
-            has_shapes=db_table(LOCATIONS_TABLE).Glacier_ID.isin(
-                db_table(SHAPE_TABLE).SiteID
-            ),
-            has_statistics=db_table(LOCATIONS_TABLE).Glacier_ID.isin(
-                db_table(MELT_RATES_TABLE).SiteID
-            ),
-        )
-        .execute()
+    expression = db_table(LOCATIONS_TABLE).mutate(
+        has_shapes=_.Glacier_ID.isin(db_table(SHAPE_TABLE).SiteID),
+        has_statistics=_.Glacier_ID.isin(db_table(MELT_RATES_TABLE).SiteID),
     )
 
+    return execute_query(expression)
 
 def shape_dates_for_site(site_id: str) -> pd.DataFrame:
     """
@@ -44,14 +37,11 @@ def shape_dates_for_site(site_id: str) -> pd.DataFrame:
     :return:
         Dataframe with start and end dates
     """
-    return (
+    expression = (
         db_table(SHAPE_TABLE)
-        .filter(db_table(SHAPE_TABLE).SiteID == site_id)
-        .group_by(db_table(SHAPE_TABLE).IcebergID, db_table(SHAPE_TABLE).filename)
-        .aggregate(
-            start=db_table(SHAPE_TABLE).Date.min(),
-            end=db_table(SHAPE_TABLE).Date.max(),
-        )
+        .filter(_.SiteID == site_id)
+        .group_by(_.IcebergID, _.filename)
+        .aggregate(start=_.Date.min(), end=_.Date.max())
         .select("start", "end")
         .mutate(
             start_date=_.start.strftime(DATE_FORMAT),
@@ -63,7 +53,9 @@ def shape_dates_for_site(site_id: str) -> pd.DataFrame:
         )
         .order_by("start")
         .distinct()
-    ).execute()
+    )
+
+    return execute_query(expression)
 
 
 @st.cache_data
@@ -121,7 +113,7 @@ def map_data(site_select: dict, date_select: dict = None) -> gpd.GeoDataFrame:
     days_elapsed = late_date.delta(deduped.Date, unit="days")
     distance_meters = early_centroid.distance(late_centroid).round(0)
 
-    shape_query = deduped.select(
+    expression = deduped.select(
         # Keep filename (campaign): IcebergID is only a label local to one
         # campaign's shapefile and is reused across unrelated campaigns, so
         # (IcebergID, filename) together are needed downstream to tell two
@@ -137,8 +129,7 @@ def map_data(site_select: dict, date_select: dict = None) -> gpd.GeoDataFrame:
         # (the "late" row of a pair, or a singleton observation).
         velocity_m_per_day=(distance_meters / days_elapsed).round(1),
     )
-
-    return shape_query.to_pandas().set_crs("EPSG:3413")
+    return execute_query(expression).set_crs("EPSG:3413")
 
 def shape_distances(data: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """

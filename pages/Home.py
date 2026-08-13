@@ -1,8 +1,8 @@
 import streamlit as st
 
 from modules.database import db_exists
-from modules.map_backgrounds import map_style_selector
 from modules.plotting import last_viewed_site, map_overlay_css, overview_map
+from modules.styling import metric_tile
 from modules.ui_elements import GLACIER_ID_KEY, shapes_button, statistics_button
 
 st.markdown(
@@ -16,31 +16,25 @@ st.markdown(
 
 st.html(
     """
-    <h1 style="
-        font-family: 'Bungee Shade', 'Audiowide', sans-serif;
-        font-size: 40px;
-        text-align: center;
-        background: linear-gradient(90deg, #9c27b0, #e91e63, #ff5722, #ffeb3b);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;">
-        ICE-AGE Innovation: Empowering Iceberg Analysis in Greenland Environments
+    <h1 style="font-family: 'Poppins', sans-serif; font-weight: 700;
+               font-size: 2.5rem; margin: 0 0 0.5rem 0; line-height: 1.2;">
+        <span style="color: #0047AB;">ICE-AGE</span><span style="color: #0B2545;">:</span>
+        <span style="color: #0E7C9E;">Iceberg Catalog for Analysis of Greenland Environments</span>
     </h1>
-    """,
+    """
 )
-
-st.text(
-    "The ICE-AGE catalog is a powerful tool for iceberg research, offering "
-    "easy access to iceberg identification, metrics, and imagery."
+st.markdown(
+    "ICE-AGE is a research tool for exploring iceberg identification, "
+    "metrics, and imagery across Greenland's coastal waters."
 )
 
 if db_exists():
     st.header("Study Sites in Greenland", divider=True)
     map_overlay_css()
-    map_style = map_style_selector()
 
     with st.container(key="glacier-map-container"):
         with st.container(key="glacier-map"):
-            map_click = overview_map(map_style)
+            map_click = overview_map("ESRI")
 
         with st.container(key="glacier-options"):
             if map_click:
@@ -63,7 +57,7 @@ if db_exists():
                             '<i class="fa-solid fa-map-marker" style="color: #808080; margin-right: 8px;"></i>No data available'
                         )
 else:
-    st.header("Setup instructions", divider=True)
+    st.header("Setup Instructions", divider=True)
     st.text(
         "To use the ICE-AGE catalog, you will need to set up the database and import "
         "the underlying data from a published Zenodo data set. Please go to the "
@@ -73,14 +67,10 @@ else:
         st.switch_page("pages/Data-Import.py")
 
 st.header("Available Iceberg Metrics", divider=True)
-st.html(
-    """
-    <div class="content-box metrics-box">
-        <ul>
-            <li>Location, repeat imagery metadata, and identification for iceberg studies.</li>
-            <li>Access code for shapefiles to connect to ICE-AGE metrics.</li>
-            <li>Iceberg size, volume, draft, and submerged area data.</li>
-        </ul>
-    </div>
-    """,
-)
+metric_cols = st.columns(3)
+with metric_cols[0]:
+    metric_tile("📍", "Location, repeat imagery metadata, and identification for iceberg studies.")
+with metric_cols[1]:
+    metric_tile("🧊", "Access code for shapefiles to connect to ICE-AGE metrics.")
+with metric_cols[2]:
+    metric_tile("📏", "Iceberg size, volume, draft, and submerged area data.")

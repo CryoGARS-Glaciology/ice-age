@@ -1,12 +1,8 @@
+import altair as alt
 import streamlit as st
 
 from database import MELT_RATES_TABLE, SHAPE_TABLE
-from modules.statistics import (
-    key_statistics,
-    key_statistics_chart_data,
-    load_statistics,
-    statistic_dates_for_site,
-)
+from modules.statistics import key_statistics, load_statistics, statistic_dates_for_site
 from modules.ui_elements import (
     date_range_selector,
     has_records,
@@ -20,7 +16,7 @@ selected_site, selected_dates = site_and_date_query_params()
 with open("pages/statistics.css", "r") as f:
     st.html(f"<style>{f.read()}</style>")
 
-st.title("📊 Iceberg Statistics Dashboard")
+st.title("Iceberg Statistics Dashboard")
 
 with st.container():
     col1, col2 = st.columns(2, vertical_alignment="bottom")
@@ -44,110 +40,64 @@ if site_name:
         available_dates = statistic_dates_for_site(site_name["Glacier_ID"])
         date_range = date_range_selector(available_dates, selected_dates)
 
-
-def hide_button(site_name, date, metric_name):
-    button_key = button_id(site_name, date, metric_name, True)
-    st.session_state[button_key] = True
-
-
-def button_id(site_name, date, metric_name, state=False):
-    base_name = f"{site_name}_{date}_{metric_name}"
-    if state:
-        return base_name + "_visible"
-    else:
-        return base_name
-
-
-@st.fragment
-def load_chart(site_name, date, metric_name):
-    button_key = button_id(site_name, date, metric_name, True)
-    data_loaded = st.session_state.get(button_key, False)
-
-    with st.expander("Chart"):
-        if not data_loaded:
-            if st.button(
-                    "Load Data",
-                    key=button_id(site_name, date, metric_name),
-                    type="secondary",
-                    on_click=hide_button,
-                    args=(site_name, date, metric_name),
-            ):
-                st.session_state[button_key] = True
-        else:
-            with st.spinner("Loading chart"):
-                chart_data = key_statistics_chart_data(site_name, date)
-                st.line_chart(
-                    data=chart_data[metric_name].astype("float"),
-                    y_label=metric_name,
-                    x_label="Observation #",
-                )
-
-
-def chart_container(column, site_name, row, metric_name):
-    button_key = button_id(
-        site_name["Glacier_ID"], row["Observation Start"], metric_name, True
-    )
-    st.session_state[button_key] = False
-
-    with column.container():
-        load_chart(
-            site_name["Glacier_ID"], row["Observation Start"],
-            metric_name
-        )
-
+CHART_METRICS = [
+    "Melt Rate (m d⁻¹)",
+    "Draft Mean (m)",
+    "Surface Area Mean (m²)",
+    "Volume Change (m³ d⁻¹)",
+    "Melt Rate Uncertainty",
+    "Number of Days",
+]
 
 if site_name:
+    stats = key_statistics(site_name=site_name["Glacier_ID"])
+
+    st.header("Key Iceberg Statistics", divider=True)
+    st.caption(f"{len(stats)} observation window(s) at {site_name['label']}")
+
+    chart_data = stats[["Observation Start"]].copy()
+    for metric_name in CHART_METRICS:
+        chart_data[metric_name] = stats[metric_name].astype("float")
+
+    columns = st.columns(3)
+    for index, metric_name in enumerate(CHART_METRICS):
+        with columns[index % 3]:
+            st.markdown(f"**{metric_name}**")
+            # mark_line(point=...) always draws a visible marker per
+            # observation, so single-observation-window sites (e.g. many
+            # sites only have 1 window) still show something instead of an
+            # empty-looking chart with no line to draw. The point is styled
+            # distinctly from the line (larger, contrasting color, white
+            # ring) so individual observations stand out clearly.
+            chart = (
+                alt.Chart(chart_data)
+                .mark_line(
+                    color="#2a78d6",
+                    point=alt.OverlayMarkDef(
+                        color="#eb6834", size=90, filled=True,
+                        stroke="white", strokeWidth=1.5,
+                    ),
+                )
+                .encode(
+                    x=alt.X("Observation Start", axis=alt.Axis(labelAngle=-45)),
+                    # zero=False: auto-scale to the data's own range so
+                    # real variability is visible instead of being
+                    # compressed against a y-axis anchored at 0.
+                    y=alt.Y(metric_name, scale=alt.Scale(zero=False)),
+                )
+                .properties(height=220, padding={"left": 5, "right": 5, "top": 5, "bottom": 5})
+                .configure_axis(labelFontSize=10, titleFontSize=11)
+                .configure_view(strokeWidth=0)
+            )
+            st.altair_chart(chart, use_container_width=True)
+
     loader_args = dict(site_name=site_name["Glacier_ID"])
     if date_range:
         loader_args["date"] = date_range["start"]
-
-    key_stats = key_statistics(**loader_args)
     data = load_statistics(**loader_args)
 
-    st.header("Key Iceberg Statistics")
-    for _, row in key_stats.iterrows():
-        with st.container(width="stretch", border=True):
-            with st.container(width="stretch"):
-                columns = st.columns(4)
-
-                for index, metric_name in enumerate(
-                    [
-                        "Observation Start",
-                        "Draft Mean (m)",
-                        "Melt Rate (m/day)",
-                        "Melt Rate Uncertainty",
-                    ]
-                ):
-                    if metric_name == "Observation Start":
-                        label = f":material/date_range: {metric_name}"
-                    else:
-                        label = f"_{metric_name}_"
-
-                    columns[index].metric(
-                        label=label,
-                        value=row[metric_name],
-                    )
-                    if metric_name != "Observation Start":
-                        chart_container(columns[index], site_name, row, metric_name)
-
-            with st.container(width="stretch"):
-                columns = st.columns(4)
-
-                for index, metric_name in enumerate(
-                    [
-                        "Number of Days",
-                        "Surface Area Mean (m^2)",
-                        "Volume change (m^3/day)",
-                    ]
-                ):
-                    columns[index].metric(
-                        label=f"_{metric_name}_", value=row[metric_name]
-                    )
-                    if metric_name != "Number of Days":
-                        chart_container(columns[index], site_name, row, metric_name)
-
-    st.write("## Raw data")
-    st.dataframe(data)
+    st.header("Raw Data", divider=True)
+    st.dataframe(data, height=250)
     st.download_button(
         label="Download .csv file",
         help="Download the above shown data as a .csv file",

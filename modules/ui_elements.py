@@ -6,7 +6,7 @@ from ibis import _
 from database import LOCATIONS_TABLE
 from modules.database import db_table, execute_query
 
-GLACIER_ID_KEY = db_table(LOCATIONS_TABLE).Glacier_ID.get_name()
+GLACIER_ID_KEY = "Glacier_ID"
 
 SITE_SELECTOR_KEY = "site_name_selector"
 SITE_PARAM = "site_id"
@@ -38,7 +38,9 @@ def site_name_selector(join_table: str, selected_site=None):
         index = (options[GLACIER_ID_KEY] == selected_site).idxmax()
         index = int(index)  # Streamlit needs an int and not int64
     else:
-        index = None
+        # Default to the first available site so the page shows data
+        # immediately instead of an empty "select a site" state.
+        index = 0 if len(options) else None
 
     return st.selectbox(
         "Site Name:",
@@ -74,18 +76,31 @@ def date_range_selector(date_ranges: pd.DataFrame, selected_date_range=None):
         Streamlit select UI object
     """
     index = None
+    # The "_" guard rejects a malformed date_range query parameter before the
+    # split, rather than raising on it.
     if selected_date_range and "_" in selected_date_range:
-        start_date, _end_date = selected_date_range.split("_")
-        if start_date in date_ranges.start_date.values:
-            index = date_ranges[date_ranges.start == start_date]["start"].idxmax()
-            index = int(index)  # Streamlit needs an int and not int64
+        # Match against the stable url_start column (not the raw `start`
+        # date, and not the display-formatted start_date, both of which are
+        # sensitive to DATE_FORMAT/type coercion) so pre-selection from a
+        # URL/deep-link is independent of the display date format.
+        url_start, _url_end = selected_date_range.split("_")
+        matches = date_ranges[date_ranges.url_start == url_start]
+        # A URL may name a period this site does not have; fall through to the
+        # default rather than indexing into an empty result.
+        if len(matches):
+            index = int(matches["start"].idxmax())  # Streamlit needs int, not int64
+
+    if index is None:
+        # Default to the first available observation period so the page
+        # shows data immediately instead of an empty "select a period" state.
+        index = 0 if len(date_ranges) else None
 
     return st.selectbox(
-        "Observation Periods (start - end):",
+        "Observation Periods (start – end):",
         date_ranges.to_dict("records"),
         index=index,
         placeholder="Filter to an observation period",
-        format_func=lambda x: f"{x['start_date']} to {x['end_date']}",
+        format_func=lambda x: f"{x['start_date']} – {x['end_date']}",
         key=DATE_RANGE_KEY,
         on_change=update_date_range_url_param,
     )
@@ -100,7 +115,7 @@ def update_date_range_url_param():
         selection = st.session_state[DATE_RANGE_KEY]
         if selection:
             st.query_params[DATE_PARAM] = (
-                f"{selection['start_date']}_{selection['end_date']}"
+                f"{selection['url_start']}_{selection['url_end']}"
             )
     else:
         st.query_params.pop(DATE_PARAM, None)

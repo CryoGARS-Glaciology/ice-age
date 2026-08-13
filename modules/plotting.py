@@ -2,10 +2,11 @@ import colorcet as cc
 import folium
 import geopandas as gpd
 import streamlit as st
+from branca.element import MacroElement, Template
 from streamlit_folium import st_folium
 
 from modules.map_backgrounds import MAP_BACKGROUNDS
-from modules.shape_viewer import locations_with_shape, shape_distances
+from modules.shape_viewer import locations_with_shape, shape_arrowheads, shape_distances
 
 
 def map_overlay_css():
@@ -83,11 +84,15 @@ def overview_map(map_style: str) -> dict:
         locations_with_shape(), geometry="geometry", crs="EPSG:4326"
     )
 
+    minx, miny, maxx, maxy = glacier_sites.total_bounds.tolist()
+    # Center explicitly on the study-site bounding box (roughly Greenland's
+    # extent) rather than relying only on fit_bounds, whose centering can
+    # shift with the container's aspect ratio.
     map = folium.Map(
+        location=[(miny + maxy) / 2, (minx + maxx) / 2],
         tiles=map_style["tiles"],
         attr=map_style["attribution"],
     )
-    minx, miny, maxx, maxy = glacier_sites.total_bounds.tolist()
     map.fit_bounds([[miny, minx], [maxy, maxx]])
 
     # Color each marker based on data availability in the database
@@ -129,6 +134,7 @@ def overview_map(map_style: str) -> dict:
     return st_folium(
         map,
         use_container_width=True,
+        height=480,
         returned_objects=["last_active_drawing"],
     )
 
@@ -159,22 +165,30 @@ def shape_color(map_element: dict, color_map: dict) -> dict:
     :return:
         Dictionary with style settings for the map element
     """
-    iceberg_id = map_element["properties"]["IcebergID"]
+    # IcebergID is only unique within one campaign (filename): the same ID
+    # is reused across unrelated campaigns/years, so both are needed to
+    # identify a specific iceberg and give it a consistent, distinct color.
+    campaign_key = (
+        map_element["properties"]["IcebergID"],
+        map_element["properties"]["filename"],
+    )
 
     # Show the date combinations with different styles.
     # The early date has 0 as date_rank
     if map_element["properties"]["date_rank"] == 0:
         line_color = "black"
         opacity = 0.7
-        weight = 1
-    else:
-        line_color = "darkgray"
-        opacity = 0.6
         weight = 2
+    else:
+        # The ending (most recent) observation of each iceberg is bolded so
+        # it stands out from its earlier observation(s).
+        line_color = "black"
+        opacity = 0.9
+        weight = 4
 
     return {
         "color": line_color,
-        "fillColor": color_map.get(iceberg_id, "#808080"),
+        "fillColor": color_map.get(campaign_key, "#808080"),
         "weight": weight,
         "fillOpacity": opacity,
     }
@@ -182,16 +196,96 @@ def shape_color(map_element: dict, color_map: dict) -> dict:
 
 def unique_colors(iceberg_sites: gpd.GeoDataFrame) -> dict:
     """
-    Create a unique color for each iceberg.
+    Create a unique color for each iceberg, keyed by (IcebergID, filename)
+    since IcebergID alone is only unique within a single campaign's
+    shapefile and is reused across unrelated campaigns/years.
 
     :param iceberg_sites: GeoDataFrame with icebergs
 
     :return:
-        Dictionary with unique colors for each iceberg
+        Dictionary with unique colors for each (IcebergID, filename) iceberg
     """
-    iceberg_ids = iceberg_sites["IcebergID"].unique()
-    palette = cc.glasbey[: len(iceberg_ids)]
-    return {ice_id: palette[index] for index, ice_id in enumerate(iceberg_ids)}
+    campaign_keys = (
+        iceberg_sites[["IcebergID", "filename"]].drop_duplicates().apply(tuple, axis=1)
+    )
+    palette = cc.glasbey[: len(campaign_keys)]
+    return {key: palette[index] for index, key in enumerate(campaign_keys)}
+
+
+# Hovering an iceberg highlights its connecting displacement line. The shapes
+# and lines are separate Leaflet layers, so this matches features between them
+# by (IcebergID, campaign filename) — IcebergID alone is reused across
+# unrelated campaigns — and restyles the matching line on mouseover/mouseout.
+#
+# The layers are reached through window.feature_group rather than by folium's
+# generated variable names: streamlit-folium re-renders a feature group passed
+# via feature_group_to_add through generate_leaflet_string(), which rewrites
+# those names, so anything captured at build time would not resolve. It pushes
+# the rendered group onto window.feature_group, which is the stable handle.
+#
+# Wrapped in a MacroElement rather than a plain folium.Element: streamlit-folium
+# rebuilds the map by collecting each child's Jinja `script` macro block, and
+# silently skips children that do not define one — a plain Element's JS is
+# dropped without warning.
+#
+# Attach with attach_highlight_script() after the map is built.
+HIGHLIGHT_SCRIPT = """
+{% macro script(this, kwargs) %}
+(function attachHighlight(attempt) {
+    attempt = attempt || 0;
+    var groups = window.feature_group;
+    // The group is injected after the map script runs, so poll for it rather
+    // than assuming order — and give up rather than spin forever.
+    if (!groups || !groups.length) {
+        if (attempt < 40) {
+            setTimeout(function() { attachHighlight(attempt + 1); }, 50);
+        }
+        return;
+    }
+    var sublayers = [];
+    groups[groups.length - 1].eachLayer(function(layer) { sublayers.push(layer); });
+    // Add order set in iceberg_map(): shapes, line casing, colored lines,
+    // arrowheads. The casing is skipped so only the colored line thickens.
+    var shapesLayer = sublayers[0];
+    var linesLayer = sublayers[2];
+    if (!shapesLayer || !linesLayer) { return; }
+
+    function key(props) { return props.IcebergID + "||" + props.filename; }
+    // Reset every line first, then (re-)apply the highlight for the hovered
+    // shape. This is deliberately not "just" reset-on-mouseout: fast pointer
+    // movement between adjacent features can skip a clean mouseout on the
+    // previously-hovered shape, leaving a stale highlight stuck on screen.
+    function resetLines() {
+        linesLayer.eachLayer(function(line) { line.setStyle({weight: 2.5}); });
+    }
+    shapesLayer.eachLayer(function(shape) {
+        var shapeKey = key(shape.feature.properties);
+        shape.on("mouseover", function() {
+            resetLines();
+            linesLayer.eachLayer(function(line) {
+                if (key(line.feature.properties) === shapeKey) {
+                    line.setStyle({weight: 6});
+                    line.bringToFront();
+                }
+            });
+        });
+        shape.on("mouseout", resetLines);
+    });
+})();
+{% endmacro %}
+"""
+
+
+def attach_highlight_script(map_element: folium.Map) -> None:
+    """
+    Attach the hover-to-highlight behaviour to a map that will receive the
+    iceberg feature group via st_folium's ``feature_group_to_add``.
+
+    :param map_element: Folium map the feature group will be added to
+    """
+    highlight = MacroElement()
+    highlight._template = Template(HIGHLIGHT_SCRIPT)
+    map_element.add_child(highlight)
 
 
 def iceberg_map(
@@ -205,9 +299,13 @@ def iceberg_map(
     :return:
         Folium map object, Updated iceberg sites DataFrame
     """
+    # Layers are added below in a fixed order that HIGHLIGHT_SCRIPT depends on:
+    #   0 shapes, 1 line casing, 2 colored lines, 3 arrowheads.
+    # Keep that order in sync if layers are added or reordered.
     feature_group = folium.FeatureGroup(name="Iceberg Shapes")
 
     site_lines = shape_distances(iceberg_sites)
+    arrows = shape_arrowheads(iceberg_sites)
     iceberg_sites.to_crs("EPSG:4326", inplace=True)
 
     tooltip_opts = dict(
@@ -223,33 +321,66 @@ def iceberg_map(
     )
 
     # Shapes
-    render_columns = ["IcebergID", "observed_date", "geom", "date_rank"]
+    iceberg_sites["velocity_display"] = iceberg_sites["velocity_m_per_day"].apply(
+        lambda v: f"{v:.1f} m d⁻¹" if v == v else "N/A (last observation in this campaign)"
+    )
+    render_columns = [
+        "IcebergID", "filename", "observed_date", "geom", "date_rank", "velocity_display",
+    ]
     shape_colors = unique_colors(iceberg_sites)
 
     folium.GeoJson(
         iceberg_sites[render_columns],
         style_function=lambda x: shape_color(x, shape_colors),
         tooltip=folium.GeoJsonTooltip(
-            fields=["observed_date", "IcebergID"],
-            aliases=["Date", "Iceberg ID"],
+            fields=["observed_date", "IcebergID", "velocity_display"],
+            aliases=["Date", "Iceberg ID", "Drift velocity to next observation"],
             **tooltip_opts,
         ),
     ).add_to(feature_group)
 
-    # Lines
+    # Lines: a wider black "casing" line drawn first, then the colored line
+    # on top and slightly thinner, so every line reads as color-with-a-
+    # black-outline against the busy satellite background.
     folium.GeoJson(
         site_lines,
-        style_function=lambda x: {
-            "stroke": True,
-            "color": shape_colors.get(x["properties"]["IcebergID"], "#808080"),
-            "weight": 2,
-            "opacity": 1.0,
-        },
+        style_function=lambda x: {"stroke": True, "color": "black", "weight": 4, "opacity": 1.0},
+    ).add_to(feature_group)
+    line_color_style = lambda x: {
+        "stroke": True,
+        "color": shape_colors.get(
+            (x["properties"]["IcebergID"], x["properties"]["filename"]), "#808080"
+        ),
+        "weight": 2.5,
+        "opacity": 1.0,
+    }
+    folium.GeoJson(
+        site_lines,
+        style_function=line_color_style,
         tooltip=folium.GeoJsonTooltip(
             fields=["distance_meters"],
             aliases=["Distance (m):"],
             **tooltip_opts,
         ),
+    ).add_to(feature_group)
+
+    # Arrowheads at the end (late observation) of each line, so the
+    # direction of travel is visible without relying on the tooltip.
+    # Rendered into the "arrowheads" pane, which the page creates on the map
+    # above the default overlay pane so arrows always sit on top of the
+    # polygons regardless of layer add order.
+    folium.GeoJson(
+        arrows,
+        style_function=lambda x: {
+            "stroke": True,
+            "color": "black",
+            "weight": 2,
+            "fillColor": shape_colors.get(
+                (x["properties"]["IcebergID"], x["properties"]["filename"]), "#808080"
+            ),
+            "fillOpacity": 1.0,
+            "pane": "arrowheads",
+        },
     ).add_to(feature_group)
 
     return feature_group, iceberg_sites

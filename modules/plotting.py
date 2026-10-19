@@ -30,7 +30,7 @@ def map_overlay_css():
             right: 20px;
             z-index: 1000; /* Must be higher than Folium's layers */
             width: 300px;
-            
+
             /* UI Styling */
             background-color: white;
             padding: 15px;
@@ -40,7 +40,7 @@ def map_overlay_css():
             font-family: "Inter", "Segoe UI", Helvetica, Arial, sans-serif !important;
             color: #31333F;
         }
-        
+
         .st-key-shapes-button button,
         .st-key-statistics-button button {
             background-color: #0047AB !important; /* Cobalt Blue */
@@ -61,7 +61,7 @@ def map_overlay_css():
             transform: translateY(-1px); /* Subtle lift on hover */
             box-shadow: 0 4px 8px rgba(0, 71, 171, 0.3) !important;
         }
-        
+
         /* 4. Heading Adjustment for Overlay */
         </style>
     """,
@@ -161,16 +161,15 @@ def shape_color(map_element: dict, color_map: dict) -> dict:
     """
     iceberg_id = map_element["properties"]["IcebergID"]
 
+    line_color = "black"
     # Show the date combinations with different styles.
     # The early date has 0 as date_rank
     if map_element["properties"]["date_rank"] == 0:
-        line_color = "black"
         opacity = 0.7
-        weight = 1
-    else:
-        line_color = "darkgray"
-        opacity = 0.6
         weight = 2
+    else:
+        opacity = 0.9
+        weight = 4
 
     return {
         "color": line_color,

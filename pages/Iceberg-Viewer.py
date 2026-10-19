@@ -26,12 +26,11 @@ with st.container():
     col1, col2 = st.columns(2, vertical_alignment="bottom")
     with col1:
         st.header("Filter")
-    with col2:
-        with st.container(horizontal_alignment="right"):
-            if selected_site and has_records(MELT_RATES_TABLE, selected_site):
-                statistics_button(
-                    selected_site, selected_dates, full_width=False, type="primary"
-                )
+    with col2, st.container(horizontal_alignment="right"):
+        if selected_site and has_records(MELT_RATES_TABLE, selected_site):
+            statistics_button(
+                selected_site, selected_dates, full_width=False, type="primary"
+            )
 
     menu_col_1, menu_col_2 = st.columns(2)
 

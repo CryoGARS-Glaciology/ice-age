@@ -5,6 +5,7 @@ import streamlit as st
 from streamlit_folium import st_folium
 
 from modules.map_backgrounds import MAP_BACKGROUNDS
+from modules.plotting_scripts import SiteLines
 from modules.shape_viewer import locations_with_shape, shape_distances
 
 
@@ -250,5 +251,6 @@ def iceberg_map(
             **tooltip_opts,
         ),
     ).add_to(feature_group)
+    SiteLines().add_to(feature_group)
 
     return feature_group, iceberg_sites

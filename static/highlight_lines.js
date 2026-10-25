@@ -9,7 +9,11 @@ function (group) {
             var properties = layer.feature.properties;
             if (properties.date_rank !== undefined) {
                 shapes.push(layer);
-            } else if (properties.distance_meters !== undefined) {
+            } else if (
+                properties.distance_meters !== undefined &&
+                layer.getLatLngs &&
+                layer.options.opacity > 0
+            ) {
                 lines.push(layer);
             }
         });

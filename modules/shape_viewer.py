@@ -26,6 +26,7 @@ def locations_with_shape() -> pd.DataFrame:
 
     return execute_query(expression)
 
+
 def shape_dates_for_site(site_id: str) -> pd.DataFrame:
     """
     Load unique combinations of start and end dates with available shapes for a given site.
@@ -76,6 +77,9 @@ def map_data(site_select: dict, date_select: dict = None) -> gpd.GeoDataFrame:
     # For calculating distances
     early_centroid = _.geom.centroid()
     late_centroid = early_centroid.lead(1).over(window)
+    late_date = _.Date.lead(1).over(window)
+    days_elapsed = late_date.delta(_.Date, unit="days")
+    distance_meters = early_centroid.distance(late_centroid).round(0)
 
     expression = table.filter(user_selection).select(
         ~s.cols("Date", "filename"),
@@ -83,9 +87,11 @@ def map_data(site_select: dict, date_select: dict = None) -> gpd.GeoDataFrame:
         observed_date=_.Date.strftime(DATE_FORMAT),
         early_centroid_geom=early_centroid,
         late_centroid_geom=late_centroid,
-        distance_meters=early_centroid.distance(late_centroid).round(0),
+        days_elapsed=days_elapsed,
+        distance_meters=distance_meters,
     )
     return execute_query(expression).set_crs("EPSG:3413")
+
 
 def shape_distances(data: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
@@ -103,8 +109,14 @@ def shape_distances(data: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
             site_lines["early_centroid_geom"], site_lines["late_centroid_geom"]
         )
     ]
+    site_lines["velocity_m_per_day"] = (
+        site_lines["distance_meters"] / site_lines["days_elapsed"]
+    ).round(2)
+
     return gpd.GeoDataFrame(
-        site_lines[["IcebergID", "distance_meters"]],
+        site_lines[
+            ["IcebergID", "distance_meters", "days_elapsed", "velocity_m_per_day"]
+        ],
         geometry=line_geometries,
         crs="EPSG:3413",
     ).to_crs(epsg=4326)

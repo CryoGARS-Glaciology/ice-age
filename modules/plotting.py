@@ -236,7 +236,7 @@ def iceberg_map(
         ),
     ).add_to(feature_group)
 
-    # Lines
+    # Connecting lines
     folium.GeoJson(
         site_lines,
         style_function=lambda x: {
@@ -245,12 +245,20 @@ def iceberg_map(
             "weight": 2,
             "opacity": 1.0,
         },
+    ).add_to(feature_group)
+
+    # Add the tooltip as a invisible line with more area for a hover over
+    folium.GeoJson(
+        site_lines,
+        style_function=lambda x: {"stroke": True, "weight": 20, "opacity": 0.0},
+        highlight_function=lambda x: {"color": "#000000", "weight": 6, "opacity": 1.0},
         tooltip=folium.GeoJsonTooltip(
-            fields=["distance_meters"],
-            aliases=["Distance (m):"],
+            fields=["distance_meters", "days_elapsed", "velocity_m_per_day"],
+            aliases=["Distance (m):", "Time Elapsed (days):", "Velocity (m/day):"],
             **tooltip_opts,
         ),
     ).add_to(feature_group)
+
     SiteLines().add_to(feature_group)
 
     return feature_group, iceberg_sites

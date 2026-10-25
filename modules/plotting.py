@@ -2,6 +2,7 @@ import colorcet as cc
 import folium
 import geopandas as gpd
 import streamlit as st
+from shapely.geometry import Point
 from streamlit_folium import st_folium
 
 from modules.map_backgrounds import MAP_BACKGROUNDS
@@ -245,6 +246,45 @@ def iceberg_map(
             "weight": 2,
             "opacity": 1.0,
         },
+    ).add_to(feature_group)
+
+    # Solid dot at the early end and hollow dot at the late end of each line
+    early_points = gpd.GeoDataFrame(
+        site_lines[["IcebergID"]],
+        geometry=[Point(line.coords[0]) for line in site_lines.geometry],
+        crs="EPSG:4326",
+    )
+    folium.GeoJson(
+        early_points,
+        style_function=lambda x: {
+            "fillColor": shape_colors[x["properties"]["IcebergID"]]
+        },
+        marker=folium.CircleMarker(
+            radius=4,
+            color="#000000",
+            weight=2,
+            opacity=0.0,
+            fill=True,
+            fill_opacity=0.0,
+        ),
+    ).add_to(feature_group)
+
+    late_points = gpd.GeoDataFrame(
+        site_lines[["IcebergID"]],
+        geometry=[Point(line.coords[-1]) for line in site_lines.geometry],
+        crs="EPSG:4326",
+    )
+    folium.GeoJson(
+        late_points,
+        marker=folium.CircleMarker(
+            radius=4,
+            color="#000000",
+            weight=2,
+            opacity=0.0,
+            fill=True,
+            fill_color="#ffffff",
+            fill_opacity=0.0,
+        ),
     ).add_to(feature_group)
 
     # Add the tooltip as a invisible line with more area for a hover over

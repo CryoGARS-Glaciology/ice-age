@@ -19,39 +19,9 @@ function (group) {
         });
     });
 
-    function insideRing(point, ring) {
-        var inside = false;
-        for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-            var xi = ring[i][0], yi = ring[i][1];
-            var xj = ring[j][0], yj = ring[j][1];
-            if (
-                (yi > point.lat) !== (yj > point.lat) &&
-                point.lng < ((xj - xi) * (point.lat - yi)) / (yj - yi) + xi
-            ) {
-                inside = !inside;
-            }
-        }
-        return inside;
-    }
-
-    function inShape(point, shape) {
-        var geometry = shape.feature.geometry;
-        var polygons = geometry.type === "Polygon" ? [geometry.coordinates] : geometry.coordinates;
-        return polygons.some(function (rings) {
-            return insideRing(point, rings[0]);
-        });
-    }
-
-    function endpoints(line) {
-        var points = line.getLatLngs();
-        return [points[0], points[points.length - 1]];
-    }
-
     shapes.forEach(function (shape) {
         var connected = lines.filter(function (line) {
-            return endpoints(line).some(function (point) {
-                return inShape(point, shape);
-            });
+            return line.feature.properties.IcebergID === shape.feature.properties.IcebergID;
         });
         var styles = connected.map(function (line) {
             return { color: line.options.color, weight: line.options.weight };

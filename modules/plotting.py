@@ -189,7 +189,7 @@ def unique_colors(iceberg_sites: gpd.GeoDataFrame) -> dict:
     :return:
         Dictionary with unique colors for each iceberg
     """
-    iceberg_ids = iceberg_sites["IcebergID"].unique()
+    iceberg_ids = sorted(iceberg_sites["IcebergID"].unique())
     palette = cc.glasbey[: len(iceberg_ids)]
     return {ice_id: palette[index] for index, ice_id in enumerate(iceberg_ids)}
 

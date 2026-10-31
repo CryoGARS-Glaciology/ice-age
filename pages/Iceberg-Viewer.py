@@ -4,6 +4,7 @@ from shapely.geometry import box
 from streamlit_folium import st_folium
 
 from database import MELT_RATES_TABLE, SHAPE_TABLE
+from modules.map_backgrounds import MAP_BACKGROUNDS, map_style_selector
 from modules.plotting import iceberg_map
 from modules.shape_viewer import map_data, shape_dates_for_site
 from modules.ui_elements import (
@@ -19,16 +20,17 @@ selected_site, selected_dates = site_and_date_query_params()
 
 st.title("🔍 Iceberg Viewer")
 
+map_style = map_style_selector()
+
 with st.container():
     col1, col2 = st.columns(2, vertical_alignment="bottom")
     with col1:
         st.header("Filter")
-    with col2:
-        with st.container(horizontal_alignment="right"):
-            if selected_site and has_records(MELT_RATES_TABLE, selected_site):
-                statistics_button(
-                    selected_site, selected_dates, full_width=False, type="primary"
-                )
+    with col2, st.container(horizontal_alignment="right"):
+        if selected_site and has_records(MELT_RATES_TABLE, selected_site):
+            statistics_button(
+                selected_site, selected_dates, full_width=False, type="primary"
+            )
 
     menu_col_1, menu_col_2 = st.columns(2)
 
@@ -48,7 +50,10 @@ if site_select:
 
     map_center = box(*iceberg_sites.total_bounds).centroid
     map_element = folium.Map(
-        location=[0.0, 0.0], zoom_start=11, tiles="CartoDB positron"
+        location=[0.0, 0.0],
+        zoom_start=11,
+        tiles=MAP_BACKGROUNDS[map_style]["tiles"],
+        attr=MAP_BACKGROUNDS[map_style]["attribution"],
     )
 
     st_folium(

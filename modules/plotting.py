@@ -2,9 +2,11 @@ import colorcet as cc
 import folium
 import geopandas as gpd
 import streamlit as st
+from shapely.geometry import Point
 from streamlit_folium import st_folium
 
 from modules.map_backgrounds import MAP_BACKGROUNDS
+from modules.plotting_scripts import SiteLines
 from modules.shape_viewer import locations_with_shape, shape_distances
 
 
@@ -30,7 +32,7 @@ def map_overlay_css():
             right: 20px;
             z-index: 1000; /* Must be higher than Folium's layers */
             width: 300px;
-            
+
             /* UI Styling */
             background-color: white;
             padding: 15px;
@@ -40,7 +42,7 @@ def map_overlay_css():
             font-family: "Inter", "Segoe UI", Helvetica, Arial, sans-serif !important;
             color: #31333F;
         }
-        
+
         .st-key-shapes-button button,
         .st-key-statistics-button button {
             background-color: #0047AB !important; /* Cobalt Blue */
@@ -61,7 +63,7 @@ def map_overlay_css():
             transform: translateY(-1px); /* Subtle lift on hover */
             box-shadow: 0 4px 8px rgba(0, 71, 171, 0.3) !important;
         }
-        
+
         /* 4. Heading Adjustment for Overlay */
         </style>
     """,
@@ -161,16 +163,15 @@ def shape_color(map_element: dict, color_map: dict) -> dict:
     """
     iceberg_id = map_element["properties"]["IcebergID"]
 
+    line_color = "black"
     # Show the date combinations with different styles.
     # The early date has 0 as date_rank
     if map_element["properties"]["date_rank"] == 0:
-        line_color = "black"
         opacity = 0.7
-        weight = 1
-    else:
-        line_color = "darkgray"
-        opacity = 0.6
         weight = 2
+    else:
+        opacity = 0.9
+        weight = 4
 
     return {
         "color": line_color,
@@ -189,7 +190,7 @@ def unique_colors(iceberg_sites: gpd.GeoDataFrame) -> dict:
     :return:
         Dictionary with unique colors for each iceberg
     """
-    iceberg_ids = iceberg_sites["IcebergID"].unique()
+    iceberg_ids = sorted(iceberg_sites["IcebergID"].unique())
     palette = cc.glasbey[: len(iceberg_ids)]
     return {ice_id: palette[index] for index, ice_id in enumerate(iceberg_ids)}
 
@@ -236,7 +237,7 @@ def iceberg_map(
         ),
     ).add_to(feature_group)
 
-    # Lines
+    # Connecting lines
     folium.GeoJson(
         site_lines,
         style_function=lambda x: {
@@ -245,11 +246,59 @@ def iceberg_map(
             "weight": 2,
             "opacity": 1.0,
         },
+    ).add_to(feature_group)
+
+    # Solid dot at the early end and hollow dot at the late end of each line
+    early_points = gpd.GeoDataFrame(
+        site_lines[["IcebergID"]],
+        geometry=[Point(line.coords[0]) for line in site_lines.geometry],
+        crs="EPSG:4326",
+    )
+    folium.GeoJson(
+        early_points,
+        style_function=lambda x: {
+            "fillColor": shape_colors[x["properties"]["IcebergID"]]
+        },
+        marker=folium.CircleMarker(
+            radius=4,
+            color="#000000",
+            weight=2,
+            opacity=0.0,
+            fill=True,
+            fill_opacity=0.0,
+        ),
+    ).add_to(feature_group)
+
+    late_points = gpd.GeoDataFrame(
+        site_lines[["IcebergID"]],
+        geometry=[Point(line.coords[-1]) for line in site_lines.geometry],
+        crs="EPSG:4326",
+    )
+    folium.GeoJson(
+        late_points,
+        marker=folium.CircleMarker(
+            radius=4,
+            color="#000000",
+            weight=2,
+            opacity=0.0,
+            fill=True,
+            fill_color="#ffffff",
+            fill_opacity=0.0,
+        ),
+    ).add_to(feature_group)
+
+    # Add the tooltip as a invisible line with more area for a hover over
+    folium.GeoJson(
+        site_lines,
+        style_function=lambda x: {"stroke": True, "weight": 20, "opacity": 0.0},
+        highlight_function=lambda x: {"color": "#000000", "weight": 6, "opacity": 1.0},
         tooltip=folium.GeoJsonTooltip(
-            fields=["distance_meters"],
-            aliases=["Distance (m):"],
+            fields=["distance_meters", "days_elapsed", "velocity_m_per_day"],
+            aliases=["Distance (m):", "Time Elapsed (days):", "Velocity (m/day):"],
             **tooltip_opts,
         ),
     ).add_to(feature_group)
+
+    SiteLines().add_to(feature_group)
 
     return feature_group, iceberg_sites

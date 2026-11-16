@@ -46,7 +46,9 @@ two parts to complete this process:
 ### Downloading the required data
 
 The required data that powers this application is not included in this repository.
-To download the data, go to: TBD
+To download the data, go to: 
+- ice mélange data: https://doi.org/10.5281/zenodo.18674388
+- iceberg melt rates and shapefiles: https://doi.org/10.5281/zenodo.23674426
 
 ### Starting the application
 

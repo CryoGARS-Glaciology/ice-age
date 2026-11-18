@@ -62,14 +62,19 @@ else:
         st.switch_page("pages/Data-Import.py")
 
 st.header("Available Iceberg Metrics", divider=True)
-st.html(
-    """
-    <div class="content-box metrics-box">
-        <ul>
-            <li>Location, repeat imagery metadata, and identification for iceberg studies.</li>
-            <li>Access code for shapefiles to connect to ICE-AGE metrics.</li>
-            <li>Iceberg size, volume, draft, and submerged area data.</li>
-        </ul>
-    </div>
-    """,
-)
+METRICS = [
+    ("📍", "Location, repeat imagery metadata, and identification for iceberg studies."),
+    ("🧊", "Access code for shapefiles to connect to ICE-AGE metrics."),
+    ("📏", "Iceberg size, volume, draft, and submerged area data."),
+]
+metric_cols = st.columns(3)
+for col, (icon, label) in zip(metric_cols, METRICS):
+    with col:
+        st.html(
+            f"""
+            <div class="metric-tile">
+                <span class="metric-tile-icon">{icon}</span>
+                <span class="metric-tile-label">{label}</span>
+            </div>
+            """
+        )

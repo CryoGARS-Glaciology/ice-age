@@ -20,3 +20,24 @@
 .home-title .subtitle {
     color: #0E7C9E;
 }
+
+.metric-tile {
+    background-color: #EAF3FA;
+    border: 1px solid #CBDCE8;
+    border-top: 4px solid #0047AB;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    min-height: 130px;
+    display: flex;
+    flex-direction: column;
+}
+
+.metric-tile-icon {
+    font-size: 1.6rem;
+    line-height: 1;
+}
+
+.metric-tile-label {
+    font-weight: 600;
+    margin-top: 0.4rem;
+}

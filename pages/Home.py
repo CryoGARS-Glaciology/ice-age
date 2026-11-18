@@ -5,27 +5,16 @@ from modules.map_backgrounds import map_style_selector
 from modules.plotting import last_viewed_site, map_overlay_css, overview_map
 from modules.ui_elements import GLACIER_ID_KEY, shapes_button, statistics_button
 
-st.markdown(
-    """
-    <style>
-    @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+with open("pages/home.css", "r") as f:
+    st.html(f"<style>{f.read()}</style>")
 
 st.html(
     """
-    <h1 style="
-        font-family: 'Bungee Shade', 'Audiowide', sans-serif;
-        font-size: 40px;
-        text-align: center;
-        background: linear-gradient(90deg, #9c27b0, #e91e63, #ff5722, #ffeb3b);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;">
-        ICE-AGE Innovation: Empowering Iceberg Analysis in Greenland Environments
+    <h1 class="home-title">
+        <span class="name">ICE-AGE</span><span class="colon">:</span>
+        <span class="subtitle">Iceberg Catalog for Analysis of Greenland Environments</span>
     </h1>
-    """,
+    """
 )
 
 st.text(

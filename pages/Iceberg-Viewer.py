@@ -18,6 +18,9 @@ from modules.ui_elements import (
 
 selected_site, selected_dates = site_and_date_query_params()
 
+with open("pages/maps.css", "r") as f:
+    st.html(f"<style>{f.read()}</style>")
+
 st.title("Iceberg Viewer")
 
 map_style = map_style_selector()
@@ -56,11 +59,12 @@ if site_select:
         attr=MAP_BACKGROUNDS[map_style]["attribution"],
     )
 
-    st_folium(
-        map_element,
-        feature_group_to_add=features,
-        center=(map_center.y, map_center.x),
-        use_container_width=True,
-        returned_objects=None,
-        key="Iceberg-Viewer-Map",
-    )
+    with st.container(key="iceberg-map"):
+        st_folium(
+            map_element,
+            feature_group_to_add=features,
+            center=(map_center.y, map_center.x),
+            use_container_width=True,
+            returned_objects=None,
+            key="Iceberg-Viewer-Map",
+        )

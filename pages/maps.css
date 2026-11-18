@@ -1,0 +1,7 @@
+/* Rounded frame and thin border for embedded maps.
+   Images are left unchanged: their own borders clip badly if rounded. */
+.st-key-glacier-map iframe,
+.st-key-iceberg-map iframe {
+    border-radius: 0.75rem;
+    border: 2px solid #0047AB;
+}

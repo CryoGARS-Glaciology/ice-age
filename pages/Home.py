@@ -5,8 +5,9 @@ from modules.map_backgrounds import map_style_selector
 from modules.plotting import last_viewed_site, map_overlay_css, overview_map
 from modules.ui_elements import GLACIER_ID_KEY, shapes_button, statistics_button
 
-with open("pages/home.css", "r") as f:
-    st.html(f"<style>{f.read()}</style>")
+for path in ("pages/home.css", "pages/maps.css"):
+    with open(path, "r") as f:
+        st.html(f"<style>{f.read()}</style>")
 
 st.html(
     """

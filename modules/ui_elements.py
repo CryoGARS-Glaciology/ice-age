@@ -12,6 +12,7 @@ SITE_SELECTOR_KEY = "site_name_selector"
 SITE_PARAM = "site_id"
 DATE_RANGE_KEY = "date_range_selector"
 DATE_PARAM = "date_range"
+ALL_PERIODS_OPTION = {"all_periods": True, "start_date": "All periods"}
 
 
 def site_and_date_query_params():
@@ -78,30 +79,39 @@ def date_range_selector(date_ranges: pd.DataFrame, selected_date_range=None):
         start_date, _end_date = selected_date_range.split("_")
         if start_date in date_ranges.start_date.values:
             index = date_ranges[date_ranges.start == start_date]["start"].idxmax()
-            index = int(index)  # Streamlit needs an int and not int64
+            # +1 because "All periods" is the first option
+            index = int(index) + 1  # Streamlit needs an int and not int64
 
-    return st.selectbox(
+    options = [ALL_PERIODS_OPTION] + date_ranges.to_dict("records")
+    selection = st.selectbox(
         "Observation Periods (start - end):",
-        date_ranges.to_dict("records"),
+        options,
         index=index,
         placeholder="Filter to an observation period",
-        format_func=lambda x: f"{x['start_date']} to {x['end_date']}",
+        format_func=lambda x: (
+            x["start_date"]
+            if x.get("all_periods")
+            else f"{x['start_date']} to {x['end_date']}"
+        ),
         key=DATE_RANGE_KEY,
         on_change=update_date_range_url_param,
     )
+
+    if selection and selection.get("all_periods"):
+        return None
+    return selection
 
 
 def update_date_range_url_param():
     """
     Date range dropdown callback to update the browser URL and add the date
-    range query parameter.
+    range query parameter. "All periods" and no selection remove the parameter.
     """
-    if st.session_state.get(DATE_RANGE_KEY, None) is not None:
-        selection = st.session_state[DATE_RANGE_KEY]
-        if selection:
-            st.query_params[DATE_PARAM] = (
-                f"{selection['start_date']}_{selection['end_date']}"
-            )
+    selection = st.session_state.get(DATE_RANGE_KEY, None)
+    if selection and not selection.get("all_periods"):
+        st.query_params[DATE_PARAM] = (
+            f"{selection['start_date']}_{selection['end_date']}"
+        )
     else:
         st.query_params.pop(DATE_PARAM, None)
 

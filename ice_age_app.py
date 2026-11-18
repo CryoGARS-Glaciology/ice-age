@@ -14,29 +14,27 @@ from modules.database import db_exists
 
 if db_exists():
     data_pages = [
-        st.Page("pages/Iceberg-Viewer.py"),
-        st.Page("pages/Statistics-dashboard.py"),
+        st.Page("pages/Iceberg-Viewer.py", title="Iceberg Viewer"),
+        st.Page("pages/Statistics-dashboard.py", title="Statistics Dashboard"),
     ]
 else:
     data_pages = []
 
 data_pages += [
-    st.Page("pages/Data-Import.py"),
+    st.Page("pages/Data-Import.py", title="Data Import"),
 ]
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide", page_title="ICE-AGE")
 pg = st.navigation(
     {
-        "": [
-            st.Page("pages/Home.py", default=True)
-        ],
+        "": [st.Page("pages/Home.py", default=True)],
         "Data": data_pages,
-        "About" : [
-            st.Page("pages/Research-methods.py"),
-            st.Page("pages/Field-Work-images.py"),
-            st.Page("pages/Image-Gallery.py"),
+        "About": [
+            st.Page("pages/Research-methods.py", title="Research Methods"),
+            st.Page("pages/Field-Work-images.py", title="Field Work Images"),
+            st.Page("pages/Image-Gallery.py", title="Image Gallery"),
             st.Page("pages/Acknowledgements.py"),
-        ]
+        ],
     }
 )
 

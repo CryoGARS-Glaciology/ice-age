@@ -1,0 +1,21 @@
+/* Title text color */
+.stTitle {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+/* Text and links styling */
+.stMarkdown a {
+    color: #4a90e2;  /* Light blue link color */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.stMarkdown a:hover {
+    text-decoration: underline;
+}
+
+/* Image styling */
+.stImage {
+    border-radius: 10px;
+}

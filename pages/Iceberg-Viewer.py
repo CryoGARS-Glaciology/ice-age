@@ -18,7 +18,7 @@ from modules.ui_elements import (
 
 selected_site, selected_dates = site_and_date_query_params()
 
-st.title("🔍 Iceberg Viewer")
+st.title("Iceberg Viewer")
 
 map_style = map_style_selector()
 

@@ -20,7 +20,7 @@ selected_site, selected_dates = site_and_date_query_params()
 with open("pages/statistics.css", "r") as f:
     st.html(f"<style>{f.read()}</style>")
 
-st.title("📊 Iceberg Statistics Dashboard")
+st.title("Iceberg Statistics Dashboard")
 
 with st.container():
     col1, col2 = st.columns(2, vertical_alignment="bottom")
@@ -133,7 +133,7 @@ if site_name:
 
     data = load_statistics(**loader_args)
 
-    st.write("## Raw data")
+    st.header("Raw Data", divider=True)
     if date_range:
         st.markdown(
             '<div class="stats-note">'
@@ -152,7 +152,7 @@ if site_name:
             "</div>",
             unsafe_allow_html=True,
         )
-    st.dataframe(data)
+    st.dataframe(data, height=250)
     st.download_button(
         label="Download .csv file",
         help="Download the above shown data as a .csv file",

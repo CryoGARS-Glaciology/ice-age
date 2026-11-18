@@ -166,7 +166,10 @@ def shapes_button(site: str, selected_date: str = None, full_width=True, **kwarg
     :param kwargs: Additional arguments for the Streamlit button.
     """
     if st.button(
-        "View Shapes", use_container_width=full_width, key="shapes-button", **kwargs
+        "View Shapes",
+        width="stretch" if full_width else "content",
+        key="shapes-button",
+        **kwargs,
     ):
         st.switch_page(
             "pages/Iceberg-Viewer.py",
@@ -185,7 +188,7 @@ def statistics_button(site: str, selected_date: str = None, full_width=True, **k
     """
     if st.button(
         "Show Statistics",
-        use_container_width=full_width,
+        width="stretch" if full_width else "content",
         key="statistics-button",
         **kwargs,
     ):

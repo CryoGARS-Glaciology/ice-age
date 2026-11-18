@@ -129,7 +129,7 @@ if site_name:
                 .configure_axis(labelFontSize=10, titleFontSize=11)
                 .configure_view(strokeWidth=0)
             )
-            st.altair_chart(chart, use_container_width=True)
+            st.altair_chart(chart, width="stretch")
 
     data = load_statistics(**loader_args)
 

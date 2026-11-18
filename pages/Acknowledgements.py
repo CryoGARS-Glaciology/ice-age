@@ -52,10 +52,10 @@ st.markdown(
 col1, col2 = st.sidebar.columns(2)
 
 # Image for NSIDC on the left column
-col1.image("catalog-data/images/NSIDC.png", use_container_width=True, width=240)
+col1.image("catalog-data/images/NSIDC.png", width=240)
 
 # Image for NSF on the right column
-col2.image("catalog-data/images/NSF.png", use_container_width=True, width=250)
+col2.image("catalog-data/images/NSF.png", width=250)
 
 # Existing sidebar images
 st.sidebar.image("catalog-data/images/Institutions.png")

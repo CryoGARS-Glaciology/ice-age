@@ -1,32 +1,11 @@
 import streamlit as st
 
-st.html(
-    """
-    <style>
-    /* Title text color */
-    .stTitle {
-        font-size: 2rem;
-        font-weight: bold;
-    }
-    /* Text and links styling */
-    .stMarkdown a {
-        color: #4a90e2;  /* Light blue link color */
-        text-decoration: none;
-        font-weight: bold;
-    }
-    .stMarkdown a:hover {
-        text-decoration: underline;
-    }
-    /* Image styling */
-    .stImage {
-        border-radius: 10px;
-    }
-    </style>
-    """,
-)
+for path in ("pages/callouts.css", "pages/acknowledgements.css"):
+    with open(path, "r") as f:
+        st.html(f"<style>{f.read()}</style>")
 
 # Titles and content
-st.title("Acknowledgements:")
+st.title("Acknowledgements")
 st.info(
     "Project funding via NSF Arctic Natural Sciences awards #2052561, #2052549, #205255"
 )
@@ -43,7 +22,7 @@ st.html(
     """
 )
 
-st.title("The Future of ICE-AGE:")
+st.title("The Future of ICE-AGE")
 st.html(
     """
     <div class="card">

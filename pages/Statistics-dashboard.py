@@ -17,7 +17,7 @@ from modules.ui_elements import (
 
 selected_site, selected_dates = site_and_date_query_params()
 
-with open("pages/statistics.css", "r") as f:
+with open("pages/callouts.css", "r") as f:
     st.html(f"<style>{f.read()}</style>")
 
 st.title("Iceberg Statistics Dashboard")
@@ -65,7 +65,7 @@ if site_name:
 
     st.header("Key Iceberg Statistics")
     st.markdown(
-        '<div class="stats-note">'
+        '<div class="card">'
         f"{len(stats)} observation window(s) for {site_name['label']}. "
         "Each chart shows every window."
         "</div>",
@@ -136,7 +136,7 @@ if site_name:
     st.header("Raw Data", divider=True)
     if date_range:
         st.markdown(
-            '<div class="stats-note">'
+            '<div class="card">'
             f"You're viewing {date_range['start_date']} to {date_range['end_date']}. "
             "The table and CSV download use this period. "
             "The charts above always show every period."
@@ -145,7 +145,7 @@ if site_name:
         )
     else:
         st.markdown(
-            '<div class="stats-note">'
+            '<div class="card">'
             "You're seeing all observation periods. Pick a period above to filter "
             "this table and the CSV download. "
             "The charts above always show every period."

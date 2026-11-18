@@ -41,3 +41,61 @@
     font-weight: 600;
     margin-top: 0.4rem;
 }
+
+/* Glacier map overlay controls */
+.st-key-glacier-map-container {
+    position: relative;
+}
+
+.st-key-glacier-map {
+    width: 100%;
+}
+
+.st-key-glacier-options {
+    position: absolute !important;
+    top: 20px;
+    right: 20px;
+    z-index: 1000; /* Must be higher than Folium's layers */
+    width: 300px;
+
+    /* UI Styling */
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ddd;
+    font-family: "Inter", "Segoe UI", Helvetica, Arial, sans-serif !important;
+    color: #31333F;
+}
+
+.st-key-shapes-button button,
+.st-key-statistics-button button {
+    background-color: #0047AB !important; /* Cobalt Blue */
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.6rem 1rem !important;
+    font-weight: 500 !important;
+    font-size: 16px !important;
+    letter-spacing: 0.3px !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+/* Hover effect */
+.st-key-statistics-button button:hover,
+.st-key-shapes-button button:hover {
+    background-color: #003380 !important;
+    transform: translateY(-1px); /* Subtle lift on hover */
+    box-shadow: 0 4px 8px rgba(0, 71, 171, 0.3) !important;
+}
+
+/* Map legend icons */
+.legend-icon-available {
+    color: #0047AB;
+    margin-right: 8px;
+}
+
+.legend-icon-missing {
+    color: #808080;
+    margin-right: 8px;
+}

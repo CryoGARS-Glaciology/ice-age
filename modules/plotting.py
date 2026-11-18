@@ -1,74 +1,12 @@
 import colorcet as cc
 import folium
 import geopandas as gpd
-import streamlit as st
 from shapely.geometry import Point
 from streamlit_folium import st_folium
 
 from modules.map_backgrounds import MAP_BACKGROUNDS
 from modules.plotting_scripts import SiteLines
 from modules.shape_viewer import locations_with_shape, shape_distances
-
-
-def map_overlay_css():
-    """
-    Add CSS styling for glacier map overlay controls.
-
-    :return:
-        st.markdown object with CSS info
-    """
-    return st.markdown(
-        """
-        <style>
-        .st-key-glacier-map-container {
-            position: relative;
-        }
-        .st-key-glacier-map {
-            width: 100%;
-        }
-        .st-key-glacier-options {
-            position: absolute !important;
-            top: 20px;
-            right: 20px;
-            z-index: 1000; /* Must be higher than Folium's layers */
-            width: 300px;
-
-            /* UI Styling */
-            background-color: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            border: 1px solid #ddd;
-            font-family: "Inter", "Segoe UI", Helvetica, Arial, sans-serif !important;
-            color: #31333F;
-        }
-
-        .st-key-shapes-button button,
-        .st-key-statistics-button button {
-            background-color: #0047AB !important; /* Cobalt Blue */
-            color: white !important;
-            border: none !important;
-            border-radius: 8px !important;
-            padding: 0.6rem 1rem !important;
-            font-weight: 500 !important;
-            font-size: 16px !important;
-            letter-spacing: 0.3px !important;
-            transition: all 0.2s ease-in-out !important;
-        }
-
-        /* 3. Hover Effect */
-        .st-key-statistics-button button:hover,
-        .st-key-shapes-button button:hover {
-            background-color: #003380 !important;
-            transform: translateY(-1px); /* Subtle lift on hover */
-            box-shadow: 0 4px 8px rgba(0, 71, 171, 0.3) !important;
-        }
-
-        /* 4. Heading Adjustment for Overlay */
-        </style>
-    """,
-        unsafe_allow_html=True,
-    )
 
 
 def overview_map(map_style: str) -> dict:

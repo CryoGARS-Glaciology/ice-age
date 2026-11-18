@@ -7,6 +7,7 @@ from database import MELT_RATES_TABLE, SHAPE_TABLE
 from modules.map_backgrounds import MAP_BACKGROUNDS, map_style_selector
 from modules.plotting import iceberg_map
 from modules.shape_viewer import map_data, shape_dates_for_site
+from modules.style_helper import load_css
 from modules.ui_elements import (
     GLACIER_ID_KEY,
     date_range_selector,
@@ -18,8 +19,7 @@ from modules.ui_elements import (
 
 selected_site, selected_dates = site_and_date_query_params()
 
-with open("pages/maps.css", "r") as f:
-    st.html(f"<style>{f.read()}</style>")
+load_css("pages/maps.css")
 
 st.title("Iceberg Viewer")
 

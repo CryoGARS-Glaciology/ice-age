@@ -2,12 +2,11 @@ import streamlit as st
 
 from modules.database import db_exists
 from modules.map_backgrounds import map_style_selector
-from modules.plotting import last_viewed_site, map_overlay_css, overview_map
+from modules.plotting import last_viewed_site, overview_map
+from modules.style_helper import load_css
 from modules.ui_elements import GLACIER_ID_KEY, shapes_button, statistics_button
 
-for path in ("pages/home.css", "pages/maps.css"):
-    with open(path, "r") as f:
-        st.html(f"<style>{f.read()}</style>")
+load_css("pages/home.css", "pages/maps.css")
 
 st.html(
     """
@@ -25,7 +24,6 @@ st.text(
 
 if db_exists():
     st.header("Study Sites in Greenland", divider=True)
-    map_overlay_css()
     map_style = map_style_selector()
 
     with st.container(key="glacier-map-container"):
@@ -49,8 +47,8 @@ if db_exists():
                     """)
                     with st.container(key="legend"):
                         st.html(
-                            '<i class="fa-solid fa-map-marker" style="color: #0047AB; margin-right: 8px;"></i>Data available<br>'
-                            '<i class="fa-solid fa-map-marker" style="color: #808080; margin-right: 8px;"></i>No data available'
+                            '<i class="fa-solid fa-map-marker legend-icon-available"></i>Data available<br>'
+                            '<i class="fa-solid fa-map-marker legend-icon-missing"></i>No data available'
                         )
 else:
     st.header("Setup instructions", divider=True)

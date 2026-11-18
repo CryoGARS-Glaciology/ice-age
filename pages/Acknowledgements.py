@@ -1,8 +1,8 @@
 import streamlit as st
 
-for path in ("pages/callouts.css", "pages/acknowledgements.css"):
-    with open(path, "r") as f:
-        st.html(f"<style>{f.read()}</style>")
+from modules.style_helper import load_css
+
+load_css("pages/callouts.css", "pages/acknowledgements.css")
 
 # Titles and content
 st.title("Acknowledgements")

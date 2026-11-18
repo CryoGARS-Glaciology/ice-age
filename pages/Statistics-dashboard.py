@@ -7,6 +7,7 @@ from modules.statistics import (
     load_statistics,
     statistic_dates_for_site,
 )
+from modules.style_helper import load_css
 from modules.ui_elements import (
     date_range_selector,
     has_records,
@@ -17,8 +18,7 @@ from modules.ui_elements import (
 
 selected_site, selected_dates = site_and_date_query_params()
 
-with open("pages/callouts.css", "r") as f:
-    st.html(f"<style>{f.read()}</style>")
+load_css("pages/callouts.css")
 
 st.title("Iceberg Statistics Dashboard")
 

@@ -175,68 +175,74 @@ def iceberg_map(
         ),
     ).add_to(feature_group)
 
-    # Connecting lines
-    folium.GeoJson(
-        site_lines,
-        style_function=lambda x: {
-            "stroke": True,
-            "color": shape_colors.get(x["properties"]["IcebergID"], "#808080"),
-            "weight": 2,
-            "opacity": 1.0,
-        },
-    ).add_to(feature_group)
+    # Lines, dots and hover layers need at least one connecting line
+    if not site_lines.empty:
+        # Connecting lines
+        folium.GeoJson(
+            site_lines,
+            style_function=lambda x: {
+                "stroke": True,
+                "color": shape_colors.get(x["properties"]["IcebergID"], "#808080"),
+                "weight": 2,
+                "opacity": 1.0,
+            },
+        ).add_to(feature_group)
 
-    # Solid dot at the early end and hollow dot at the late end of each line
-    early_points = gpd.GeoDataFrame(
-        site_lines[["IcebergID"]],
-        geometry=[Point(line.coords[0]) for line in site_lines.geometry],
-        crs="EPSG:4326",
-    )
-    folium.GeoJson(
-        early_points,
-        style_function=lambda x: {
-            "fillColor": shape_colors[x["properties"]["IcebergID"]]
-        },
-        marker=folium.CircleMarker(
-            radius=4,
-            color="#000000",
-            weight=2,
-            opacity=0.0,
-            fill=True,
-            fill_opacity=0.0,
-        ),
-    ).add_to(feature_group)
+        # Solid dot at the early end and hollow dot at the late end of each line
+        early_points = gpd.GeoDataFrame(
+            site_lines[["IcebergID"]],
+            geometry=[Point(line.coords[0]) for line in site_lines.geometry],
+            crs="EPSG:4326",
+        )
+        folium.GeoJson(
+            early_points,
+            style_function=lambda x: {
+                "fillColor": shape_colors[x["properties"]["IcebergID"]]
+            },
+            marker=folium.CircleMarker(
+                radius=4,
+                color="#000000",
+                weight=2,
+                opacity=0.0,
+                fill=True,
+                fill_opacity=0.0,
+            ),
+        ).add_to(feature_group)
 
-    late_points = gpd.GeoDataFrame(
-        site_lines[["IcebergID"]],
-        geometry=[Point(line.coords[-1]) for line in site_lines.geometry],
-        crs="EPSG:4326",
-    )
-    folium.GeoJson(
-        late_points,
-        marker=folium.CircleMarker(
-            radius=4,
-            color="#000000",
-            weight=2,
-            opacity=0.0,
-            fill=True,
-            fill_color="#ffffff",
-            fill_opacity=0.0,
-        ),
-    ).add_to(feature_group)
+        late_points = gpd.GeoDataFrame(
+            site_lines[["IcebergID"]],
+            geometry=[Point(line.coords[-1]) for line in site_lines.geometry],
+            crs="EPSG:4326",
+        )
+        folium.GeoJson(
+            late_points,
+            marker=folium.CircleMarker(
+                radius=4,
+                color="#000000",
+                weight=2,
+                opacity=0.0,
+                fill=True,
+                fill_color="#ffffff",
+                fill_opacity=0.0,
+            ),
+        ).add_to(feature_group)
 
-    # Add the tooltip as a invisible line with more area for a hover over
-    folium.GeoJson(
-        site_lines,
-        style_function=lambda x: {"stroke": True, "weight": 20, "opacity": 0.0},
-        highlight_function=lambda x: {"color": "#000000", "weight": 6, "opacity": 1.0},
-        tooltip=folium.GeoJsonTooltip(
-            fields=["distance_meters", "days_elapsed", "velocity_m_per_day"],
-            aliases=["Distance (m):", "Time Elapsed (days):", "Velocity (m/day):"],
-            **tooltip_opts,
-        ),
-    ).add_to(feature_group)
+        # Add the tooltip as a invisible line with more area for a hover over
+        folium.GeoJson(
+            site_lines,
+            style_function=lambda x: {"stroke": True, "weight": 20, "opacity": 0.0},
+            highlight_function=lambda x: {
+                "color": "#000000",
+                "weight": 6,
+                "opacity": 1.0,
+            },
+            tooltip=folium.GeoJsonTooltip(
+                fields=["distance_meters", "days_elapsed", "velocity_m_per_day"],
+                aliases=["Distance (m):", "Time Elapsed (days):", "Velocity (m/day):"],
+                **tooltip_opts,
+            ),
+        ).add_to(feature_group)
 
-    SiteLines().add_to(feature_group)
+        SiteLines().add_to(feature_group)
 
     return feature_group, iceberg_sites

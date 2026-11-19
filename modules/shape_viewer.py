@@ -66,10 +66,29 @@ def map_data(site_select: dict, date_select: dict = None) -> gpd.GeoDataFrame:
         GeoDataFrame with all shapes for the given site and date range
     """
     table = db_table(SHAPE_TABLE)
-    user_selection = [table.SiteID == site_select["Glacier_ID"]]
+    observations = table.filter(table.SiteID == site_select["Glacier_ID"])
+
     if date_select:
-        user_selection.append(
-            table.Date.isin([date_select["start"], date_select["end"]])
+        range_start, range_end = date_select["start"], date_select["end"]
+
+        # Each iceberg's first and last date within its campaign file
+        observations = observations.mutate(
+            span_start=_.Date.min().over(group_by=[_.IcebergID, _.filename]),
+            span_end=_.Date.max().over(group_by=[_.IcebergID, _.filename]),
+        )
+
+        # Keep campaigns where some iceberg spans exactly the selected range,
+        # and only the observations inside that range
+        observations = (
+            observations.mutate(
+                campaign_matches=(
+                    (_.span_start == range_start) & (_.span_end == range_end)
+                )
+                .any()
+                .over(group_by=_.filename)
+            )
+            .filter(_.campaign_matches & _.Date.between(range_start, range_end))
+            .drop("span_start", "span_end", "campaign_matches")
         )
 
     # Find matching early and late observations
@@ -81,7 +100,7 @@ def map_data(site_select: dict, date_select: dict = None) -> gpd.GeoDataFrame:
     days_elapsed = late_date.delta(_.Date, unit="days")
     distance_meters = early_centroid.distance(late_centroid).round(0)
 
-    expression = table.filter(user_selection).select(
+    expression = observations.select(
         ~s.cols("Date", "filename"),
         date_rank=ibis.row_number().over(window),
         observed_date=_.Date.strftime(DATE_FORMAT),
@@ -102,7 +121,19 @@ def shape_distances(data: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     :return:
         GeoDataFrame with distance between early and late centroids
     """
-    site_lines = data[data["date_rank"] == 0]
+    site_lines = data[
+        (data["date_rank"] == 0) & data["late_centroid_geom"].notna()
+    ]
+    if site_lines.empty:
+        return gpd.GeoDataFrame(
+            {
+                "IcebergID": [],
+                "distance_meters": [],
+                "days_elapsed": [],
+                "velocity_m_per_day": [],
+            },
+            geometry=gpd.GeoSeries([], crs="EPSG:4326"),
+        )
     line_geometries = [
         LineString([(early.x, early.y), (late.x, late.y)])
         for early, late in zip(

@@ -123,7 +123,7 @@ def shape_distances(data: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
     site_lines = data[
         (data["date_rank"] == 0) & data["late_centroid_geom"].notna()
-    ]
+    ].copy()
     if site_lines.empty:
         return gpd.GeoDataFrame(
             {
